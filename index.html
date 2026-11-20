@@ -65,9 +65,23 @@
         <div><strong id="pocet"></strong><span>dopísaných textov</span></div>
       </div>
 
-      <!-- Graf rýchlosti, nakreslí ho graf.js -->
-      <div id="grafKontajner" class="graf skryty">
-        <canvas id="graf"></canvas>
+      <!-- Graf rýchlosti alebo presnosti, nakreslí ho graf.js -->
+      <div id="grafKontajner" class="skryty">
+        <div class="prepinac">
+          <button data-zobrazenie="rychlost" class="aktivny">Rýchlosť</button>
+          <button data-zobrazenie="presnost">Presnosť</button>
+        </div>
+        <div class="graf">
+          <canvas id="graf"></canvas>
+        </div>
+      </div>
+
+      <!-- Mapa chýb na klávesnici, vykreslí ju chyby.js -->
+      <div id="chybyKontajner" class="skryty">
+        <h3>Problémové klávesy</h3>
+        <p class="navod">Čím červenejší kláves, tým častejšie sa na ňom mýliš. Prejdi myšou nad kláves pre podrobnosti.</p>
+        <div id="mapaChyb" class="klavesnica mala"></div>
+        <p id="problemoveZnaky" class="problemove"></p>
       </div>
 
       <table id="tabulka" class="skryty">
@@ -87,6 +101,7 @@
   <script src="klavesnica.js"></script>
   <script src="vysledky.js"></script>
   <script src="graf.js"></script>
+  <script src="chyby.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

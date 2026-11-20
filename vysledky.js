@@ -73,6 +73,7 @@ function vykresliVysledky() {
   const maVysledky = z !== null;
 
   vykresliGraf(vysledky); // graf.js
+  vykresliMapuChyb();      // chyby.js
 
   document.getElementById("ziadneVysledky").classList.toggle("skryty", maVysledky);
   document.getElementById("prehlad").classList.toggle("skryty", !maVysledky);
@@ -111,6 +112,7 @@ function vykresliVysledky() {
 document.getElementById("vymazat").addEventListener("click", () => {
   if (confirm("Naozaj vymazať všetky uložené výsledky?")) {
     vymazVysledky();
+    vymazStatistikuKlavesov(); // chyby.js
     vykresliVysledky();
   }
 });

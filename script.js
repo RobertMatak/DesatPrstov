@@ -36,6 +36,7 @@ function zacniCvicenie() {
   koniecCas = null;
   hotovo = false;
   mrtvyKlavesStlaceny = false;
+  zacniStatistikuKlavesov(); // chyby.js
 
   vysledokEl.classList.add("skryty");
   vykresliText();
@@ -78,6 +79,7 @@ function spracujZnak(znak) {
   const span = textEl.children[pozicia];
   span.classList.remove("aktualny");
   pocetUhozov++;
+  zapisUhoz(ZNAKY[pozicia], znak === ZNAKY[pozicia]); // chyby.js
 
   if (znak === ZNAKY[pozicia]) {
     span.classList.add("spravne");
@@ -134,6 +136,7 @@ function koniec() {
       chyby: pocetChyb,
       sekundy: Math.round(staty.sekundy),
     });
+    ulozStatistikuKlavesov(); // chyby.js
     vykresliVysledky();
   }
 

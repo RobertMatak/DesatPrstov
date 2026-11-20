@@ -157,12 +157,13 @@ function vykresliKlavesnicu(kontajner) {
 }
 
 // ===== Zvýrazňovanie klávesov =====
+// Hľadáme len v hlavnej klávesnici (#klavesnica), nie v mape chýb pri výsledkoch.
 function klavesyPodlaKodu(kod) {
-  return document.querySelectorAll(`.klaves[data-kod="${kod}"]`);
+  return document.querySelectorAll(`#klavesnica .klaves[data-kod="${kod}"]`);
 }
 
 function zrusZvyraznenie() {
-  document.querySelectorAll(".klaves.ciel").forEach((k) => k.classList.remove("ciel"));
+  document.querySelectorAll("#klavesnica .klaves.ciel").forEach((k) => k.classList.remove("ciel"));
 }
 
 // Zvýrazní kláves, ktorý treba stlačiť (a Shift na druhej ruke, ak treba)
@@ -184,7 +185,7 @@ function pustiKlaves(kod) {
   klavesyPodlaKodu(kod).forEach((k) => k.classList.remove("stlaceny"));
 }
 function pustiVsetkyKlavesy() {
-  document.querySelectorAll(".klaves.stlaceny").forEach((k) => k.classList.remove("stlaceny"));
+  document.querySelectorAll("#klavesnica .klaves.stlaceny").forEach((k) => k.classList.remove("stlaceny"));
 }
 
 // ===== Nápoveda textom =====
