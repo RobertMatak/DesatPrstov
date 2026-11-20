@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desať Prstov – písanie všetkými desiatimi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Desať Prstov</h1>
+    <p class="navod">Klikni na text a začni písať. Chybu opravíš klávesom Backspace.</p>
+
+    <!-- Živé štatistiky počas písania -->
+    <div class="staty">
+      <span>Rýchlosť: <strong id="zivaRychlost">–</strong> slov/min</span>
+      <span>Presnosť: <strong id="zivaPresnost">100</strong> %</span>
+      <span>Chyby: <strong id="zivaChyby">0</strong></span>
+      <span>Čas: <strong id="zivyCas">0:00</strong></span>
+    </div>
+
+    <!-- Sem JavaScript vloží text na prepisovanie, každé písmeno zvlášť -->
+    <div id="text" class="text"></div>
+
+    <!-- Skryté políčko, ktoré v skutočnosti prijíma písanie z klávesnice -->
+    <input id="vstup" class="skryty-vstup" autocomplete="off" autocorrect="off"
+           autocapitalize="off" spellcheck="false">
+
+    <!-- Výsledok, zobrazí sa až po dopísaní textu -->
+    <div id="vysledok" class="vysledok skryty">
+      <h2>Hotovo! <span id="novyRekord" class="odznak skryty">Nový osobný rekord!</span></h2>
+      <div class="vysledok-cisla">
+        <div><strong id="vysledokRychlost"></strong><span>slov za minútu</span></div>
+        <div><strong id="vysledokPresnost"></strong><span>% presnosť</span></div>
+        <div><strong id="vysledokChyby"></strong><span>chýb</span></div>
+        <div><strong id="vysledokCas"></strong><span>čas</span></div>
+      </div>
+      <button id="dalsi">Ďalší text (Enter)</button>
+      <button id="zopakovat" class="druhotne">Zopakovať tento text</button>
+    </div>
+
+    <!-- Nápoveda: ktorý kláves stlačiť a ktorým prstom -->
+    <p id="napoveda" class="napoveda"></p>
+
+    <!-- Klávesnica na obrazovke, vykreslí ju klavesnica.js -->
+    <div id="klavesnica" class="klavesnica"></div>
+
+    <div class="legenda">
+      <span class="prst-m">malíček</span>
+      <span class="prst-p">prstenník</span>
+      <span class="prst-s">prostredník</span>
+      <span class="prst-u">ukazovák</span>
+      <span class="prst-a">palec</span>
+    </div>
+
+    <!-- Uložené výsledky, vykreslí ich vysledky.js -->
+    <section class="moje-vysledky">
+      <h2>Moje výsledky</h2>
+      <p id="ziadneVysledky" class="navod">Zatiaľ tu nič nie je. Dopíš prvý text a výsledok sa uloží sem.</p>
+
+      <div id="prehlad" class="vysledok-cisla skryty">
+        <div><strong id="rekord"></strong><span>osobný rekord (slov/min)</span></div>
+        <div><strong id="priemer"></strong><span>priemer posledných 10</span></div>
+        <div><strong id="priemernaPresnost"></strong><span>% priemerná presnosť</span></div>
+        <div><strong id="pocet"></strong><span>dopísaných textov</span></div>
+      </div>
+
+      <!-- Graf rýchlosti, nakreslí ho graf.js -->
+      <div id="grafKontajner" class="graf skryty">
+        <canvas id="graf"></canvas>
+      </div>
+
+      <table id="tabulka" class="skryty">
+        <thead>
+          <tr><th>Kedy</th><th>Text</th><th>Slov/min</th><th>Presnosť</th><th>Chyby</th><th>Čas</th></tr>
+        </thead>
+        <tbody id="riadky"></tbody>
+      </table>
+
+      <button id="vymazat" class="druhotne skryty">Vymazať výsledky</button>
+    </section>
+  </main>
+
+  <!-- Poradie je dôležité: script.js používa veci z ostatných súborov -->
+  <script src="chart.umd.min.js"></script> <!-- knižnica na grafy (Chart.js) -->
+  <script src="texty.js"></script>
+  <script src="klavesnica.js"></script>
+  <script src="vysledky.js"></script>
+  <script src="graf.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
