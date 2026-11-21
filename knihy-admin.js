@@ -242,7 +242,7 @@ $("pridatKapitolu").addEventListener("click", () => {
     }
     const zle = nepodporovaneZnaky(text); // texty-admin.js
     if (zle.length > 0) {
-      return ukazHlasku(`Tieto znaky sa nedajú napísať na slovenskej klávesnici, oprav ich: ${zle.join("  ")}`, true);
+      return ukazHlasku(hlaskaZlychZnakov(zle), true); // texty-admin.js
     }
 
     const udaje = {

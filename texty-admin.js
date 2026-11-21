@@ -10,11 +10,26 @@ let vsetkyTexty = [];  // všetky náhodné texty učiteľa
 let textyTriedy = [];  // tie, ktoré sa práve zobrazujú (pre ročník triedy alebo všetky)
 let upravovanyText = null; // text načítaný vo formulári na úpravu (null = pridávame nový)
 
+// Neviditeľné znaky, ktoré sa často skryjú v texte skopírovanom z Wordu, PDF alebo webu.
+// Na obrazovke ich nevidno, ale žiak by ich nedokázal napísať.
+const NEVIDITELNE_ZNAKY = {
+  "\u00AD": "mäkký rozdeľovník",          // miesto, kde sa slovo smie rozdeliť na konci riadku
+  "\u200B": "medzera s nulovou šírkou",
+  "\u200C": "nespájač s nulovou šírkou",
+  "\u200D": "spájač s nulovou šírkou",
+  "\u200E": "značka smeru textu",
+  "\u200F": "značka smeru textu",
+  "\u2060": "neviditeľný spájač slov",
+  "\uFEFF": "neviditeľná značka BOM",
+};
+const NEVIDITELNE_REGEX = new RegExp("[" + Object.keys(NEVIDITELNE_ZNAKY).join("") + "]", "g");
+
 // Upraví vložený text tak, aby sa dal písať na klávesnici:
-// typografické úvodzovky a pomlčky z kníh a webu nahradí obyčajnými,
-// nové riadky a viac medzier za sebou nahradí jednou medzerou.
+// odstráni neviditeľné znaky, typografické úvodzovky a pomlčky z kníh
+// a webu nahradí obyčajnými, nové riadky a viac medzier za sebou nahradí jednou medzerou.
 function vycistiText(text) {
   return text
+    .replace(NEVIDITELNE_REGEX, "") // napr. „ly­že“ s mäkkým rozdeľovníkom → „lyže“
     .normalize("NFC")
     .replace(/[„“”«»]/g, '"')
     .replace(/[–—]/g, "-")
@@ -27,6 +42,18 @@ function vycistiText(text) {
 function nepodporovaneZnaky(text) {
   const zle = Array.from(text).filter((znak) => krokyPreZnak(znak).length === 0); // klavesnica.js
   return [...new Set(zle)]; // Set odstráni duplikáty, ako set() v Pythone
+}
+
+// Hláška so zoznamom zlých znakov. Znak, ktorý nevidno (alebo ho
+// ľahko prehliadneš), dostane aj popis a kód, napr. „U+2028“.
+function hlaskaZlychZnakov(zle) {
+  const popis = (znak) => {
+    const kod = "U+" + znak.codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
+    if (NEVIDITELNE_ZNAKY[znak]) return `${NEVIDITELNE_ZNAKY[znak]} (neviditeľný, ${kod})`;
+    if (/[\p{C}\p{Z}]/u.test(znak)) return `neviditeľný znak (${kod})`; // riadiace znaky a zvláštne medzery
+    return znak;
+  };
+  return "Tieto znaky sa nedajú napísať na slovenskej klávesnici, oprav ich: " + zle.map(popis).join(",  ");
 }
 
 // Počet slov v texte
@@ -175,7 +202,7 @@ $("pridatText").addEventListener("click", () => {
     }
     const zle = nepodporovaneZnaky(text);
     if (zle.length > 0) {
-      return ukazHlasku(`Tieto znaky sa nedajú napísať na slovenskej klávesnici, oprav ich: ${zle.join("  ")}`, true);
+      return ukazHlasku(hlaskaZlychZnakov(zle), true);
     }
     if (vsetkyTexty.some((t) => t.text === text && (!upravovanyText || t.id !== upravovanyText.id))) {
       return ukazHlasku("Tento text už máš medzi náhodnými textami.", true);
