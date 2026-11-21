@@ -8,7 +8,7 @@
 const KLUC_REZIM = "desatPrstov.rezim";
 const KLUC_PRIBEH = "desatPrstov.pribeh";
 
-let textyOdUcitela = [];  // [{ id, nazov, text }] pre triedu žiaka (zo servera)
+let textyOdUcitela = [];  // [{ id, nazov, text, autor, zdroj }] pre triedu žiaka (zo servera)
 let slovNaUryvok = 20;    // dĺžka úryvku pre ročník žiaka (zo servera)
 let postupPribehov = {};  // id príbehu → od ktorého slova pokračovať
 let rezim = "nahodne";    // "nahodne" alebo "pribeh"
@@ -96,6 +96,15 @@ function nazovPribehu(t) {
   return t.nazov || slovaTextu(t.text).slice(0, 4).join(" ") + "…";
 }
 
+// "Zdroj: Pavol Dobšinský – Soľ nad zlato (Prostonárodné slovenské povesti)"
+function popisZdroja(t) {
+  if (t.vstavany) return "Zdroj: texty aplikácie Desať Prstov";
+  const dielo = [t.autor, t.nazov].filter((x) => x).join(" – ");
+  if (dielo && t.zdroj) return `Zdroj: ${dielo} (${t.zdroj})`;
+  if (dielo || t.zdroj) return "Zdroj: " + (dielo || t.zdroj);
+  return ""; // učiteľ zdroj neuviedol
+}
+
 function percentaPribehu(t) {
   const pocet = slovaTextu(t.text).length;
   return Math.min(100, Math.round(((postupPribehov[t.id] || 0) / pocet) * 100));
@@ -173,26 +182,30 @@ function dalsiText() {
     const koniec = koniecUryvku(slova, od, slovNaUryvok);
     aktualnyUryvok = { textId: pribeh.id, od, koniec, pocet: slova.length };
     aktualnyText = slova.slice(od, koniec).join(" "); // script.js
+    document.getElementById("zdrojTextu").textContent = popisZdroja(pribeh);
   } else {
     // Náhodné texty: náhodný začiatok vety v náhodnom texte
     // (dlhší text má viac viet, a tak aj väčšiu šancu)
-    const texty = textyOdUcitela.map((t) => t.text).concat(TEXTY);
+    const texty = textyOdUcitela.concat(TEXTY.map((text) => ({ text, vstavany: true })));
     const moznosti = [];
-    texty.forEach((text, i) => {
-      const slova = slovaTextu(text);
+    texty.forEach((t, i) => {
+      const slova = slovaTextu(t.text);
       for (const z of zaciatkyViet(slova)) {
         if (z === 0 || slova.length - z >= slovNaUryvok * 0.7) moznosti.push([i, z]);
       }
     });
 
     let novy = aktualnyText;
+    let zdrojovyText = null;
     for (let pokus = 0; pokus < 10 && novy === aktualnyText; pokus++) {
       const [i, od] = moznosti[Math.floor(Math.random() * moznosti.length)];
-      const slova = slovaTextu(texty[i]);
+      zdrojovyText = texty[i];
+      const slova = slovaTextu(zdrojovyText.text);
       novy = slova.slice(od, koniecUryvku(slova, od, slovNaUryvok)).join(" ");
     }
     aktualnyUryvok = null;
     aktualnyText = novy;
+    document.getElementById("zdrojTextu").textContent = zdrojovyText ? popisZdroja(zdrojovyText) : "";
   }
   zacniCvicenie(); // script.js
 }

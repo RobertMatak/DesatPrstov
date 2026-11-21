@@ -35,7 +35,7 @@ async function nacitajTexty() {
   $("dlzkaPreTriedu").textContent = popisDlzkyTriedy(); // dlzky-admin.js
 
   // Všetky texty učiteľa; pre túto triedu vyberieme jej vlastné a tie „pre všetky“
-  const { data, error } = await db.from("texty").select("id, trieda_id, nazov, text, vytvorene").order("vytvorene");
+  const { data, error } = await db.from("texty").select("id, trieda_id, nazov, autor, zdroj, text, vytvorene").order("vytvorene");
   if (error) return ukazHlasku(popisChyby(error), true);
 
   textyTriedy = data.filter((t) => t.trieda_id === null || t.trieda_id === vybranaTrieda.id);
@@ -63,11 +63,24 @@ function vykresliTexty() {
     nahlad.appendChild(document.createTextNode(`${ukazka} (${pocetSlov(t.text)} slov)`));
     nahlad.title = t.text.slice(0, 1000); // začiatok textu po prejdení myšou
 
+    // Autor a zdroj pod textom (alebo upozornenie, že chýba)
+    const zdroj = document.createElement("div");
+    zdroj.className = "zdroj-v-zozname";
+    const popis = [t.autor, t.zdroj].filter((x) => x).join(" – ");
+    zdroj.textContent = popis ? "Zdroj: " + popis : "Zdroj nie je uvedený";
+    if (!popis) zdroj.classList.add("chyba-zdroja");
+    nahlad.appendChild(zdroj);
+
     const znacka = document.createElement("span");
     znacka.className = "znacka" + (t.trieda_id === null ? " vsetky" : "");
     znacka.textContent = t.trieda_id === null ? "všetky triedy" : "len " + vybranaTrieda.nazov;
 
-    li.append(nahlad, znacka, tlacidlo("Zmazať", "nebezpecne", () => zmazText(t))); // tlacidlo je z admin.js
+    li.append(
+      nahlad,
+      znacka,
+      tlacidlo("Zdroj", "druhotne", () => upravZdroj(t)), // tlacidlo je z admin.js
+      tlacidlo("Zmazať", "nebezpecne", () => zmazText(t)),
+    );
     zoznam.appendChild(li);
   }
 }
@@ -91,20 +104,37 @@ $("pridatText").addEventListener("click", () => {
     }
 
     const preVsetky = document.querySelector("input[name=komuText]:checked").value === "vsetky";
-    const nazov = $("nazovTextu").value.trim().replace(/\s+/g, " ");
+    const jedenRiadok = (id) => $(id).value.trim().replace(/\s+/g, " ") || null; // prázdne → null
     const { error } = await db.from("texty").insert({
       text,
-      nazov: nazov || null, // prázdny názov neukladáme
+      nazov: jedenRiadok("nazovTextu"),
+      autor: jedenRiadok("autorTextu"),
+      zdroj: jedenRiadok("zdrojTextu"),
       trieda_id: preVsetky ? null : vybranaTrieda.id,
     });
     if (error) return ukazHlasku(popisChyby(error), true);
 
-    $("novyText").value = "";
-    $("nazovTextu").value = "";
+    for (const id of ["novyText", "nazovTextu", "autorTextu", "zdrojTextu"]) $(id).value = "";
     ukazHlasku(preVsetky ? "Text bol pridaný pre všetky tvoje triedy." : `Text bol pridaný pre triedu ${vybranaTrieda.nazov}.`);
     await nacitajTexty();
   });
 });
+
+// Doplnenie alebo oprava autora a zdroja pri už pridanom texte
+async function upravZdroj(t) {
+  const autor = prompt("Autor textu (nechaj prázdne, ak nie je):", t.autor || "");
+  if (autor === null) return; // Zrušiť
+  const zdroj = prompt("Zdroj: kniha, vydanie alebo webová adresa:", t.zdroj || "");
+  if (zdroj === null) return;
+
+  const { error } = await db.from("texty").update({
+    autor: autor.trim().slice(0, 100) || null,
+    zdroj: zdroj.trim().slice(0, 300) || null,
+  }).eq("id", t.id);
+  if (error) return ukazHlasku(popisChyby(error), true);
+  ukazHlasku("Zdroj bol uložený.");
+  await nacitajTexty();
+}
 
 async function zmazText(t) {
   const upozornenie = t.trieda_id === null

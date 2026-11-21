@@ -403,3 +403,11 @@ tr.rekord-riadok td {
   margin: 6px 0 0;
   font-weight: bold;
 }
+
+/* Autor a zdroj pod textom */
+.zdroj-textu {
+  margin: 8px 4px 0;
+  font-size: 13px;
+  color: #888;
+  min-height: 1.2em;
+}

@@ -381,3 +381,19 @@ select {
 .upozornenie { color: #b3261e; font-size: 13px; }
 
 .zoznam-textov .nazov-textu { font-weight: bold; margin-right: 6px; }
+
+/* ===== Autor a zdroj textu ===== */
+.zdroj-polia {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.zdroj-v-zozname {
+  font-size: 13px;
+  color: #777;
+  margin-top: 2px;
+}
+
+.zdroj-v-zozname.chyba-zdroja { color: #b3261e; }
