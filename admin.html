@@ -64,10 +64,10 @@
 
         <!-- Dĺžky úryvkov podľa ročníkov (riadi dlzky-admin.js) -->
         <section class="karta">
-          <h2>Dĺžka úryvkov</h2>
-          <p class="sivy">Približný počet slov, ktorý žiak napíše naraz. Platí pre všetky triedy ročníka.</p>
+          <h2>Úryvky podľa ročníkov</h2>
+          <p class="sivy"><b>Slov:</b> približný počet slov, ktorý žiak napíše naraz. <b>Presnosť:</b> koľko % potrebuje, aby postúpil v knihe. Platí pre všetky triedy ročníka.</p>
           <div id="dlzkyRocnikov" class="dlzky-mriezka"></div>
-          <button id="ulozitDlzky">Uložiť dĺžky</button>
+          <button id="ulozitDlzky">Uložiť nastavenia</button>
         </section>
       </div>
 
@@ -103,6 +103,7 @@
                   <th data-stlpec="pocet">Textov</th>
                   <th data-stlpec="priemer">Slov/min</th>
                   <th data-stlpec="presnost">Presnosť</th>
+                  <th data-stlpec="knihy" title="Koľko % kníh má žiak dopísaných; ⚠ = niekde sa zasekol">Knihy</th>
                   <th data-stlpec="rekord">Rekord</th>
                   <th data-stlpec="naposledy">Naposledy</th>
                 </tr>
@@ -126,6 +127,24 @@
                 <div class="graf"><canvas id="graf"></canvas></div>
               </div>
 
+              <!-- Súhrn podľa druhu písania (len pre žiaka) -->
+              <div id="suhrnDruhovKontajner" class="skryty">
+                <h4>Podľa druhu písania</h4>
+                <table class="suhrn-druhov">
+                  <thead>
+                    <tr><th>Druh</th><th>Pokusov</th><th>Slov/min</th><th>Presnosť</th><th>Úspešných</th></tr>
+                  </thead>
+                  <tbody id="suhrnDruhov"></tbody>
+                </table>
+              </div>
+
+              <!-- Postup v knihách (žiak aj celá trieda) -->
+              <div id="postupVKnihachKontajner" class="skryty">
+                <h4>Postup v knihách</h4>
+                <p id="popisPostupuKnih" class="sivy"></p>
+                <div id="postupVKnihach"></div>
+              </div>
+
               <!-- Mapa chýb, vykreslí ju chyby.js -->
               <div id="chybyKontajner" class="skryty">
                 <h4>Problémové klávesy</h4>
@@ -143,7 +162,7 @@
                 </div>
                 <table>
                   <thead>
-                    <tr><th>Kedy</th><th>Text</th><th>Slov/min</th><th>Presnosť</th><th>Chyby</th><th>Čas</th><th></th></tr>
+                    <tr><th>Kedy</th><th>Druh</th><th>Text</th><th>Slov/min</th><th>Presnosť</th><th>Chyby</th><th>Čas</th><th></th></tr>
                   </thead>
                   <tbody id="vysledkyZiakaRiadky"></tbody>
                 </table>

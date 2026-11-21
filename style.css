@@ -615,3 +615,18 @@ tr.rekord-riadok td {
 
 .sprava-pribehu { margin: 4px 0 14px; }
 .sprava-pribehu:empty { display: none; }  /* prázdna správa nezaberá miesto */
+
+/* ===== Knihy: dôraz na presnosť ===== */
+.rezim-kniha .stat-rychlost { opacity: 0.55; }
+
+.rezim-kniha .stat-presnost {
+  background: #eef7ec;
+  padding: 2px 10px;
+  border-radius: 12px;
+  color: #222;
+}
+
+#cielPresnosti { color: #555; }
+
+.presnost-ok { color: #2a8a3e; }
+.presnost-malo { color: #d9443b; }

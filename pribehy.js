@@ -6,6 +6,7 @@
 
 let textyOdUcitela = [];  // [{ id, nazov, text, autor, zdroj }] pre triedu žiaka (zo servera)
 let slovNaUryvok = 20;    // dĺžka úryvku pre ročník žiaka (zo servera)
+let potrebnaPresnost = 90; // % presnosti potrebné na postup v knihe (zo servera)
 let aktualnyUryvok = null; // pri kapitole: { textId, od, koniec, pocet }
 
 // ----- Delenie textu na úryvky -----
@@ -73,6 +74,7 @@ async function nacitajUdajeZiaka(ajPostup) {
   if (!error && data) {
     textyOdUcitela = data.texty;
     slovNaUryvok = data.slov;
+    if (data.presnost) potrebnaPresnost = data.presnost;
     nastavKnihy(data.knihy || [], ajPostup ? data.postup : null); // kniznica.js
   } else if (error) {
     // Databáza ešte bez novších úprav: aspoň náhodné texty po starom
@@ -87,6 +89,9 @@ async function nacitajUdajeZiaka(ajPostup) {
 function dalsiText() {
   document.getElementById("spravaKapitoly").textContent = "";
   document.getElementById("dalsi").textContent = "Ďalší text (Enter)";
+  document.getElementById("obrazovka-pisanie").classList.toggle("rezim-kniha", aktualnaKapitola !== null);
+  // Pri knihách ukážeme vedľa presnosti aj to, koľko treba
+  document.getElementById("cielPresnosti").textContent = aktualnaKapitola ? ` (potrebné ${potrebnaPresnost} %)` : "";
 
   if (aktualnaKapitola) return dalsiUryvokKapitoly(); // kniznica.js
 

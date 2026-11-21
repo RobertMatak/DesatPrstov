@@ -355,22 +355,28 @@ select {
 
 .dlzky-mriezka {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px 12px;
+  grid-template-columns: auto 1fr 1fr;
+  gap: 6px 12px;
+  align-items: center;
   margin: 12px 0 14px;
+  color: #555;
+  font-size: 14px;
+}
+
+.dlzky-hlavicka {
+  font-size: 12px;
+  color: #888;
 }
 
 .dlzky-mriezka label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #555;
-  font-size: 14px;
+  gap: 4px;
 }
 
 .dlzky-mriezka input {
-  width: 56px;
-  padding: 5px 6px;
+  width: 60px;
+  padding: 4px 6px;
 }
 
 .cela-sirka {
@@ -446,4 +452,38 @@ select {
   border-radius: 8px;
   padding-left: 8px;
   padding-right: 8px;
+}
+
+/* ===== Súhrn podľa druhu a postup v knihách ===== */
+.suhrn-druhov { margin-bottom: 8px; }
+
+.postup-kniha { margin: 10px 0 16px; }
+
+.postup-kniha-nazov {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.postup-kapitola {
+  display: grid;
+  grid-template-columns: 220px 160px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.postup-kapitola.zaseknuty span:last-child { color: #b3261e; }
+
+.pruh {
+  height: 8px;
+  background: #ebe8e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pruh > div {
+  height: 100%;
+  background: #2a8a3e;
+  border-radius: 4px;
 }

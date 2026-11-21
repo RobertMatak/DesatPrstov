@@ -4,8 +4,11 @@
 // rovnaké ako v aplikácii žiakov, len im podstrčíme dáta vybraného žiaka
 // alebo celej triedy.
 
-let vysledkyTriedy = [];  // všetky výsledky žiakov triedy, najstarší prvý
+let vysledkyTriedy = [];  // všetky výsledky žiakov triedy, najstarší prvý (aj s druhom: nahodne / kniha)
 let klavesyTriedy = [];   // riadky štatistiky klávesov: { ziak_id, znak, spolu, chyby }
+let knihyTriedy = [];     // knihy, ktoré trieda vidí: { id, nazov, kapitoly: [{ id, nazov, slov }] }
+let postupTriedy = [];    // postup žiakov v kapitolách: { ziak_id, kapitola_id, pozicia }
+const POKUSOV_NA_ZASEKNUTIE = 3; // toľko neúspešných pokusov za sebou = „zasekol sa“
 let vybranyZiak = null;   // null = celá trieda
 let radenie = { stlpec: "meno", zostupne: false };
 
@@ -39,11 +42,12 @@ async function nacitajVysledkyTriedy() {
   if (idZiakov.length === 0) {
     vysledkyTriedy = [];
     klavesyTriedy = [];
+    postupTriedy = [];
   } else {
     try {
       const riadky = await nacitajVsetko(() => db
         .from("vysledky")
-        .select("id, ziak_id, datum, text_zaciatok, rychlost, presnost, chyby, sekundy")
+        .select("id, ziak_id, datum, text_zaciatok, rychlost, presnost, chyby, sekundy, druh, kapitola_id")
         .in("ziak_id", idZiakov)
         .order("datum")
         .order("id"));
@@ -56,12 +60,92 @@ async function nacitajVysledkyTriedy() {
         .in("ziak_id", idZiakov)
         .order("ziak_id")
         .order("znak"));
+
+      postupTriedy = await nacitajVsetko(() => db
+        .from("postup_kapitol")
+        .select("ziak_id, kapitola_id, pozicia")
+        .in("ziak_id", idZiakov)
+        .order("ziak_id")
+        .order("kapitola_id"));
     } catch (chyba) {
       return ukazHlasku(popisChyby(chyba), true);
     }
   }
+
+  // Knihy, ktoré trieda vidí, s kapitolami (bez konceptov) a ich počtom slov
+  const { data: knihy, error } = await db
+    .from("knihy")
+    .select("id, nazov, trieda_id, vytvorene, kapitoly(id, poradie, nazov, text, koncept, vytvorene)")
+    .order("vytvorene");
+  if (error) return ukazHlasku(popisChyby(error), true);
+  knihyTriedy = knihy
+    .filter((k) => k.trieda_id === null || k.trieda_id === vybranaTrieda.id)
+    .map((k) => ({
+      id: k.id,
+      nazov: k.nazov,
+      kapitoly: k.kapitoly
+        .filter((c) => !c.koncept)
+        .sort((a, b) => a.poradie - b.poradie || a.vytvorene.localeCompare(b.vytvorene))
+        .map((c) => ({ id: c.id, nazov: c.nazov, slov: c.text.split(/\s+/).filter((s) => s).length })),
+    }))
+    .filter((k) => k.kapitoly.length > 0);
+
   vykresliPrehlad();
   vykresliAnalyzu();
+}
+
+
+// ===== Postup v knihách =====
+// Koľko slov kapitoly má žiak započítaných (najviac celú kapitolu)
+function napisaneZiakom(idZiaka, kap) {
+  const p = postupTriedy.find((r) => r.ziak_id === idZiaka && r.kapitola_id === kap.id);
+  return Math.min(p ? p.pozicia : 0, kap.slov);
+}
+
+const percentaZ = (cast, celok) => (celok === 0 ? 0 : Math.round((cast / celok) * 100));
+
+function percentaKapitolyZiaka(idZiaka, kap) {
+  return percentaZ(napisaneZiakom(idZiaka, kap), kap.slov);
+}
+
+function percentaKnihyZiaka(idZiaka, kniha) {
+  const napisane = kniha.kapitoly.reduce((s, k) => s + napisaneZiakom(idZiaka, k), 0);
+  const spolu = kniha.kapitoly.reduce((s, k) => s + k.slov, 0);
+  return percentaZ(napisane, spolu);
+}
+
+// Pokusy žiaka v kapitole (výsledky s touto kapitolou), najstarší prvý
+function pokusyVKapitole(idZiaka, kap) {
+  return vysledkyTriedy.filter((r) => r.ziak_id === idZiaka && r.kapitola_id === kap.id);
+}
+
+// Zasekol sa = kapitola nie je dopísaná a posledné 3 pokusy v nej mali malú presnosť
+function zasekolSa(idZiaka, kap) {
+  if (percentaKapitolyZiaka(idZiaka, kap) === 100) return false;
+  const posledne = pokusyVKapitole(idZiaka, kap).slice(-POKUSOV_NA_ZASEKNUTIE);
+  return posledne.length === POKUSOV_NA_ZASEKNUTIE &&
+    posledne.every((r) => r.presnost < potrebnaPresnostTriedy()); // dlzky-admin.js
+}
+
+function zasekolSaNiekde(idZiaka) {
+  return knihyTriedy.some((kniha) => kniha.kapitoly.some((kap) => zasekolSa(idZiaka, kap)));
+}
+
+// Celkové % zo všetkých kníh triedy (null, ak trieda nemá knihy)
+function percentaVsetkychKnih(idZiaka) {
+  const kapitoly = knihyTriedy.flatMap((k) => k.kapitoly);
+  if (kapitoly.length === 0) return null;
+  const napisane = kapitoly.reduce((s, k) => s + napisaneZiakom(idZiaka, k), 0);
+  return percentaZ(napisane, kapitoly.reduce((s, k) => s + k.slov, 0));
+}
+
+// "Kniha: Soľ nad zlato, 2. kapitola" podľa id kapitoly
+function popisKapitoly(idKapitoly) {
+  for (const kniha of knihyTriedy) {
+    const i = kniha.kapitoly.findIndex((k) => k.id === idKapitoly);
+    if (i >= 0) return `${kniha.nazov}, ${i + 1}. kap.`;
+  }
+  return "kniha";
 }
 
 
@@ -75,6 +159,8 @@ function prehladZiaka(ziak) {
     pocet: v.length,
     priemer: z ? z.priemer : null,
     presnost: z ? z.priemernaPresnost : null,
+    knihy: percentaVsetkychKnih(ziak.id),
+    zaseknuty: zasekolSaNiekde(ziak.id),
     rekord: z ? z.rekord : null,
     naposledy: v.length > 0 ? v[v.length - 1].datum : null,
   };
@@ -106,6 +192,7 @@ function vykresliPrehlad() {
       r.pocet,
       r.priemer ?? "–",                       // ?? = ak je vľavo null, použi "–"
       r.presnost === null ? "–" : r.presnost + " %",
+      r.knihy === null ? "–" : r.knihy + " %" + (r.zaseknuty ? " ⚠" : ""),
       r.rekord ?? "–",
       r.naposledy ? formatujDatum(r.naposledy) : "nikdy",
     ];
@@ -175,6 +262,9 @@ function vykresliAnalyzu() {
     }
   }
 
+  vykresliSuhrnDruhov(jeZiak ? vysledky : null);
+  vykresliPostupVKnihach();
+
   nastavVysledky(vysledky);           // vysledky.js (graf.js si ich berie pri prepnutí)
   vykresliGraf(vysledky);             // graf.js: kreslí až od 2 výsledkov
   nastavStatistikuKlavesov(statistika);
@@ -184,6 +274,98 @@ function vykresliAnalyzu() {
   $("ziadneData").classList.toggle("skryty", !ziadneData);
 
   if (jeZiak) vykresliVysledkyZiaka(vysledky);
+}
+
+// Súhrn pre žiaka: náhodné texty a knihy zvlášť
+function vykresliSuhrnDruhov(vysledky) {
+  $("suhrnDruhovKontajner").classList.toggle("skryty", !vysledky || vysledky.length === 0);
+  if (!vysledky) return;
+
+  const telo = $("suhrnDruhov");
+  telo.innerHTML = "";
+  const potrebna = potrebnaPresnostTriedy(); // dlzky-admin.js
+  const druhy = [
+    { nazov: "Náhodné texty", druh: "nahodne" },
+    { nazov: "Knihy", druh: "kniha" },
+    // neskôr: { nazov: "Lekcie", druh: "lekcia" },
+  ];
+  for (const d of druhy) {
+    const v = vysledky.filter((r) => (r.druh || "nahodne") === d.druh);
+    const z = zhrnutie(v); // vysledky.js
+    const uspesne = d.druh === "kniha"
+      ? `${v.filter((r) => r.presnost >= potrebna).length} z ${v.length} (aspoň ${potrebna} %)`
+      : "–";
+    const tr = document.createElement("tr");
+    for (const obsah of [d.nazov, v.length, z ? z.priemer : "–", z ? z.priemernaPresnost + " %" : "–", uspesne]) {
+      const td = document.createElement("td");
+      td.textContent = obsah;
+      tr.appendChild(td);
+    }
+    telo.appendChild(tr);
+  }
+}
+
+// Postup v knihách: pre žiaka jeho kapitoly, pre celú triedu koľko žiakov kapitolu dopísalo
+function vykresliPostupVKnihach() {
+  $("postupVKnihachKontajner").classList.toggle("skryty", knihyTriedy.length === 0);
+  const obal = $("postupVKnihach");
+  obal.innerHTML = "";
+  if (knihyTriedy.length === 0) return;
+
+  const potrebna = potrebnaPresnostTriedy();
+  $("popisPostupuKnih").textContent = vybranyZiak
+    ? `Na postup potrebuje presnosť aspoň ${potrebna} %. ⚠ = posledné ${POKUSOV_NA_ZASEKNUTIE} pokusy v kapitole boli pod touto hranicou.`
+    : `Koľko žiakov kapitolu dopísalo. ⚠ = počet žiakov, ktorí sa v kapitole zasekli (${POKUSOV_NA_ZASEKNUTIE} neúspešné pokusy za sebou).`;
+
+  for (const kniha of knihyTriedy) {
+    const blok = document.createElement("div");
+    blok.className = "postup-kniha";
+    const nadpis = document.createElement("div");
+    nadpis.className = "postup-kniha-nazov";
+    nadpis.textContent = vybranyZiak
+      ? `${kniha.nazov} · ${percentaKnihyZiaka(vybranyZiak.id, kniha)} %`
+      : kniha.nazov;
+    blok.appendChild(nadpis);
+
+    kniha.kapitoly.forEach((kap, i) => {
+      const riadok = document.createElement("div");
+      riadok.className = "postup-kapitola";
+      const nazov = document.createElement("span");
+      nazov.textContent = `${i + 1}. ${kap.nazov || "Kapitola " + (i + 1)}`;
+
+      let percent;
+      let popis;
+      if (vybranyZiak) {
+        percent = percentaKapitolyZiaka(vybranyZiak.id, kap);
+        const pokusy = pokusyVKapitole(vybranyZiak.id, kap);
+        const posledne = pokusy.slice(-3).map((r) => r.presnost + " %").join(", ");
+        popis = `${percent} %` + (pokusy.length > 0 ? ` · ${pokusy.length} pokusov · posledné: ${posledne}` : "");
+        if (zasekolSa(vybranyZiak.id, kap)) {
+          popis += " · ⚠ zasekol sa";
+          riadok.classList.add("zaseknuty");
+        }
+      } else {
+        const dopisali = ziaci.filter((z) => percentaKapitolyZiaka(z.id, kap) === 100).length;
+        const zasekli = ziaci.filter((z) => zasekolSa(z.id, kap)).length;
+        percent = percentaZ(dopisali, ziaci.length);
+        popis = `dopísalo ${dopisali} z ${ziaci.length}` + (zasekli > 0 ? ` · ⚠ zasekli sa: ${zasekli}` : "");
+        if (zasekli > 0) riadok.classList.add("zaseknuty");
+      }
+
+      const pruh = document.createElement("div");
+      pruh.className = "pruh";
+      const vypln = document.createElement("div");
+      vypln.style.width = percent + "%";
+      pruh.appendChild(vypln);
+      const info = document.createElement("span");
+      info.className = "sivy";
+      info.textContent = popis;
+
+      riadok.append(nazov, pruh, info);
+      blok.appendChild(riadok);
+    });
+    obal.appendChild(blok);
+  }
 }
 
 $("celaTrieda").addEventListener("click", () => {
@@ -202,8 +384,9 @@ function vykresliVysledkyZiaka(vysledky) {
 
   for (const v of [...vysledky].reverse()) { // najnovší hore
     const tr = document.createElement("tr");
+    const druh = v.druh === "kniha" ? "📚 " + popisKapitoly(v.kapitola_id) : "náhodný";
     for (const obsah of [
-      formatujDatum(v.datum), v.text, v.rychlost, v.presnost + " %", v.chyby, formatujCas(v.sekundy),
+      formatujDatum(v.datum), druh, v.text, v.rychlost, v.presnost + " %", v.chyby, formatujCas(v.sekundy),
     ]) {
       const td = document.createElement("td");
       td.textContent = obsah;

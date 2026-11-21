@@ -55,6 +55,12 @@ function ukazDalsiKlaves() {
     napovedaEl.textContent = "";
     return;
   }
+  if (pozicia >= ZNAKY.length) {
+    // Text je dopísaný, ale v knihe ostali chyby (pozri spracujZnak)
+    zrusZvyraznenie();
+    napovedaEl.textContent = "Oprav červené písmená: vráť sa k nim klávesom Backspace a napíš ich znova. Úryvok sa ukončí, až keď bude bez chýb.";
+    return;
+  }
   const kroky = krokyPreZnak(ZNAKY[pozicia]);
   // Pri znakoch ako ó či ď: po stlačení ´ alebo ˇ ukážeme už písmeno
   const krok = mrtvyKlavesStlaceny && kroky.length > 1 ? 1 : 0;
@@ -65,6 +71,7 @@ function ukazDalsiKlaves() {
 // Spracuje jeden napísaný znak
 function spracujZnak(znak) {
   if (hotovo) return;
+  if (pozicia >= ZNAKY.length) return; // na konci textu sa čaká na opravu chýb
   if (zaciatok === null) zaciatok = Date.now();
 
   const span = textEl.children[pozicia];
@@ -81,6 +88,8 @@ function spracujZnak(znak) {
 
   pozicia++;
   if (pozicia === ZNAKY.length) {
+    // V knihách musí byť úryvok na konci bez chýb (kniznica.js)
+    if (vyzadujeBezchybnyText() && textEl.querySelector(".chybne")) return;
     koniec();
   } else {
     textEl.children[pozicia].classList.add("aktualny");
@@ -90,7 +99,7 @@ function spracujZnak(znak) {
 // Backspace: vráti sa o jeden znak späť
 function vratSpat() {
   if (hotovo || pozicia === 0) return;
-  textEl.children[pozicia].classList.remove("aktualny");
+  if (pozicia < ZNAKY.length) textEl.children[pozicia].classList.remove("aktualny");
   pozicia--;
   const span = textEl.children[pozicia];
   span.classList.remove("spravne", "chybne");
@@ -127,10 +136,12 @@ function koniec() {
       presnost: staty.presnost,
       chyby: pocetChyb,
       sekundy: Math.round(staty.sekundy),
+      druh: aktualnaKapitola ? "kniha" : "nahodne",           // kniznica.js
+      kapitola_id: aktualnaKapitola ? aktualnaKapitola.id : null,
     }, klavesy);
     vykresliVysledky();
   }
-  poDopisaniUryvku(); // kniznica.js: postup v kapitole a obnovenie textov od učiteľa
+  poDopisaniUryvku(staty.presnost); // kniznica.js: postup v kapitole (ak bola presnosť dosť vysoká)
 
   vysledokEl.classList.remove("skryty");
 }

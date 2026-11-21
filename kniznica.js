@@ -2,6 +2,9 @@
 // Obrazovky: písanie, knižnica (všetky knihy), kniha (kapitoly), moje výsledky.
 // Knihu žiak píše kapitolu po kapitole. Ďalšia kapitola sa odomkne,
 // až keď dopíše predchádzajúcu. Postup sa ukladá na server.
+// V knihách rozhoduje presnosť: úryvok sa započíta, len ak má žiak aspoň
+// potrebnú presnosť (podľa ročníka, nastavuje učiteľ), a úryvok sa ukončí,
+// až keď v ňom nie je žiadne červené písmeno.
 
 const ZAMYKAT_KAPITOLY = true; // false = žiak môže začať ktorúkoľvek kapitolu
 const FARBY_OBALOK = ["#f6c1cc", "#fbd9a8", "#fdf0a6", "#c3e6b8", "#b9dcf2", "#d8c8f0", "#f3c9b0", "#c7e3dc"];
@@ -13,6 +16,9 @@ let aktualnaKniha = null;    // kniha, ktorú žiak práve píše alebo prezerá
 let aktualnaKapitola = null; // { id, nazov, slov, index } práve písaná kapitola, inak null
 
 const podlaId = (id) => document.getElementById(id);
+
+// Pri knihách musí byť úryvok na konci bez chýb (volá script.js)
+const vyzadujeBezchybnyText = () => aktualnaKapitola !== null;
 
 // Po načítaní zo servera (volá pribehy.js). postup = null → ponechať doterajší.
 // Knihy bez kapitol (učiteľ ich ešte pripravuje) žiakom neukazujeme.
@@ -174,7 +180,8 @@ function ukazKnihu(kniha) {
   podlaId("autorKnihy").textContent = [kniha.autor, kniha.zdroj].filter((x) => x).join(" · ");
   const p = percentaKnihy(kniha);
   podlaId("pruhKnihy").style.width = p + "%";
-  podlaId("postupKnihy").textContent = p === 100 ? "🏆 Celá kniha je dopísaná!" : `Dopísané ${p} % knihy`;
+  podlaId("postupKnihy").textContent = (p === 100 ? "🏆 Celá kniha je dopísaná!" : `Dopísané ${p} % knihy`) +
+    ` · na postup potrebuješ presnosť aspoň ${potrebnaPresnost} %`; // pribehy.js
 
   const zoznam = podlaId("zoznamKapitol");
   zoznam.innerHTML = "";
@@ -264,7 +271,7 @@ function aktualizujHlavickuKapitoly() {
   const kap = aktualnaKapitola;
   nastavHlavickuPisania(
     aktualnaKniha.nazov,
-    `${nazovKapitoly(kap, kap.index)} · dopísané ${percentaKapitoly(kap)} %`,
+    `${nazovKapitoly(kap, kap.index)} · dopísané ${percentaKapitoly(kap)} % · potrebná presnosť ${potrebnaPresnost} %`,
     true
   );
 }
@@ -275,14 +282,29 @@ async function ulozPostupKapitoly(idKapitoly, pozicia) {
 }
 
 // ----- Po dopísaní úryvku (volá script.js) -----
-function poDopisaniUryvku() {
+// presnost = presnosť práve dopísaného úryvku v %
+function poDopisaniUryvku(presnost) {
   const sprava = podlaId("spravaKapitoly");
   const dalsi = podlaId("dalsi");
+  const cisloPresnosti = podlaId("vysledokPresnost");
   sprava.textContent = "";
   dalsi.textContent = "Ďalší text (Enter)";
+  cisloPresnosti.classList.remove("presnost-ok", "presnost-malo");
 
   if (aktualnaKapitola && aktualnyUryvok) {
     const u = aktualnyUryvok;
+
+    // Nedostatočná presnosť: postup sa neposunie, úryvok sa píše znova
+    if (presnost < potrebnaPresnost) {
+      cisloPresnosti.classList.add("presnost-malo");
+      sprava.textContent = `Presnosť ${presnost} %. Na pokračovanie v príbehu potrebuješ aspoň ${potrebnaPresnost} %. ` +
+        "Skús tento úryvok ešte raz, pomaly a presne!";
+      dalsi.textContent = "Skúsiť znova (Enter)";
+      nacitajUdajeZiaka(false);
+      return;
+    }
+
+    cisloPresnosti.classList.add("presnost-ok");
     if (u.koniec > (postupKapitol[u.textId] || 0)) { // pri „Zopakovať“ sa postup nemení
       postupKapitol[u.textId] = u.koniec;
       ulozPostupKapitoly(u.textId, u.koniec);
@@ -298,6 +320,7 @@ function poDopisaniUryvku() {
         dalsi.textContent = "Späť na knihu (Enter)";
       }
     } else {
+      sprava.textContent = `👍 Presnosť ${presnost} %, pokračuješ ďalej v príbehu.`;
       dalsi.textContent = "Pokračovať (Enter)";
     }
     aktualizujHlavickuKapitoly();
