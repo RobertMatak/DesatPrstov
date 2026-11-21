@@ -401,3 +401,22 @@ select {
 /* ===== Kapitoly v knihe ===== */
 .zoznam-kapitol li { gap: 6px; }
 .zoznam-kapitol button.male { min-width: 30px; }
+
+/* ===== Koncepty a úpravy ===== */
+.volba-konceptu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 12px;
+  color: #444;
+}
+
+.znacka.koncept { background: #eeeeee; color: #555; }
+
+/* Riadok, ktorý sa práve upravuje */
+.zoznam-textov li.upravovany {
+  background: #fff8dc;
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}

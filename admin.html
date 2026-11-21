@@ -181,6 +181,7 @@
               <label><input type="radio" name="komuText" value="vsetky"> pre všetky moje triedy</label>
             </div>
             <button id="pridatText">Pridať text</button>
+            <button id="zrusitUpravuTextu" class="druhotne skryty">Zrušiť úpravu</button>
 
             <h3>Náhodné texty pre túto triedu <span id="pocetTextov" class="sivy"></span></h3>
             <ul id="zoznamTextov" class="zoznam-textov"></ul>
@@ -223,10 +224,15 @@
               <ol id="zoznamKapitol" class="zoznam-textov zoznam-kapitol"></ol>
               <p id="ziadneKapitoly" class="sivy skryty">Kniha zatiaľ nemá kapitoly. Pridaj prvú nižšie.</p>
 
-              <h3>Pridať kapitolu</h3>
+              <h3 id="nadpisFormuKapitoly">Pridať kapitolu</h3>
               <input id="nazovKapitoly" class="cela-sirka" placeholder="Názov kapitoly (napr. Kráľ a tri dcéry), nepovinné" maxlength="100">
-              <textarea id="textKapitoly" rows="8" placeholder="Text kapitoly (20 až 20 000 znakov)…"></textarea>
+              <textarea id="textKapitoly" rows="10" placeholder="Text kapitoly (20 až 20 000 znakov)…"></textarea>
+              <label class="volba-konceptu">
+                <input type="checkbox" id="konceptKapitoly">
+                Ešte nie je hotová – žiaci ju zatiaľ nevidia (koncept)
+              </label>
               <button id="pridatKapitolu">Pridať kapitolu</button>
+              <button id="zrusitUpravuKapitoly" class="druhotne skryty">Zrušiť úpravu</button>
             </div>
           </div>
 

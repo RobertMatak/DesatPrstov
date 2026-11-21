@@ -6,6 +6,7 @@
 let knihy = [];          // knihy, ktoré vidí vybraná trieda
 let vybranaKniha = null; // otvorená kniha (null = zoznam kníh)
 let kapitoly = [];       // kapitoly otvorenej knihy v poradí
+let upravovanaKapitola = null; // kapitola načítaná vo formulári na úpravu (null = pridávame novú)
 
 // Text pre všetky polia „jeden riadok“: orezať medzery, prázdne → null
 const riadokAleboNull = (text) => text.trim().replace(/\s+/g, " ") || null;
@@ -88,12 +89,14 @@ $("pridatKnihu").addEventListener("click", () => {
 
 // ===== Otvorená kniha =====
 async function otvorKnihu(kniha) {
+  // Pri otvorení inej knihy zrušíme rozrobenú úpravu kapitoly z predchádzajúcej
+  if (!vybranaKniha || vybranaKniha.id !== kniha.id) zrusUpravuKapitoly();
   vybranaKniha = kniha;
   zapamataj("kniha", kniha.id); // admin.js
 
   const { data, error } = await db
     .from("kapitoly")
-    .select("id, poradie, nazov, text, vytvorene")
+    .select("id, poradie, nazov, text, koncept, vytvorene")
     .eq("kniha_id", kniha.id)
     .order("poradie")
     .order("vytvorene");
@@ -116,6 +119,7 @@ function vykresliKapitoly() {
 
   kapitoly.forEach((kap, i) => {
     const li = document.createElement("li");
+    if (upravovanaKapitola && upravovanaKapitola.id === kap.id) li.classList.add("upravovany");
 
     const nahlad = document.createElement("span");
     nahlad.className = "nahlad";
@@ -133,14 +137,29 @@ function vykresliKapitoly() {
     hore.title = "Posunúť vyššie";
     dole.title = "Posunúť nižšie";
 
-    li.append(nahlad, hore, dole,
-      tlacidlo("Premenovať", "druhotne", () => premenujKapitolu(kap)),
+    li.appendChild(nahlad);
+    if (kap.koncept) {
+      const znacka = document.createElement("span");
+      znacka.className = "znacka koncept";
+      znacka.textContent = "koncept";
+      znacka.title = "Žiaci túto kapitolu zatiaľ nevidia";
+      li.appendChild(znacka);
+    }
+    li.append(hore, dole,
+      tlacidlo("Upraviť", "druhotne", () => upravKapitolu(kap)),
       tlacidlo("Zmazať", "nebezpecne", () => zmazKapitolu(kap)));
     zoznam.appendChild(li);
   });
+
+  // Číslo upravovanej kapitoly v nadpise formulára (mohlo sa zmeniť posunom)
+  if (upravovanaKapitola) {
+    const i = kapitoly.findIndex((k) => k.id === upravovanaKapitola.id);
+    if (i >= 0) $("nadpisFormuKapitoly").textContent = `Upraviť kapitolu ${i + 1}`;
+  }
 }
 
 $("spatNaKnihy").addEventListener("click", () => {
+  zrusUpravuKapitoly();
   vybranaKniha = null;
   zapamataj("kniha", null);
   nacitajKnihy();
@@ -181,6 +200,36 @@ $("zmazatKnihu").addEventListener("click", async () => {
 
 
 // ===== Kapitoly =====
+// Ten istý formulár slúži na pridanie novej kapitoly aj na úpravu existujúcej.
+function upravKapitolu(kap) {
+  upravovanaKapitola = kap;
+  $("nazovKapitoly").value = kap.nazov || "";
+  $("textKapitoly").value = kap.text;
+  $("konceptKapitoly").checked = kap.koncept;
+  const poradie = kapitoly.findIndex((k) => k.id === kap.id) + 1;
+  $("nadpisFormuKapitoly").textContent = `Upraviť kapitolu ${poradie}`;
+  $("pridatKapitolu").textContent = "Uložiť zmeny";
+  $("zrusitUpravuKapitoly").classList.remove("skryty");
+  vykresliKapitoly(); // zvýrazní upravovanú kapitolu
+  $("nadpisFormuKapitoly").scrollIntoView({ behavior: "smooth" });
+  $("textKapitoly").focus({ preventScroll: true });
+}
+
+function zrusUpravuKapitoly() {
+  upravovanaKapitola = null;
+  $("nazovKapitoly").value = "";
+  $("textKapitoly").value = "";
+  $("konceptKapitoly").checked = false;
+  $("nadpisFormuKapitoly").textContent = "Pridať kapitolu";
+  $("pridatKapitolu").textContent = "Pridať kapitolu";
+  $("zrusitUpravuKapitoly").classList.add("skryty");
+}
+
+$("zrusitUpravuKapitoly").addEventListener("click", () => {
+  zrusUpravuKapitoly();
+  vykresliKapitoly();
+});
+
 $("pridatKapitolu").addEventListener("click", () => {
   sTlacidlom($("pridatKapitolu"), async () => {
     const text = vycistiText($("textKapitoly").value); // texty-admin.js
@@ -196,19 +245,28 @@ $("pridatKapitolu").addEventListener("click", () => {
       return ukazHlasku(`Tieto znaky sa nedajú napísať na slovenskej klávesnici, oprav ich: ${zle.join("  ")}`, true);
     }
 
-    // Nová kapitola ide na koniec knihy
-    const poradie = kapitoly.length > 0 ? Math.max(...kapitoly.map((k) => k.poradie)) + 1 : 0;
-    const { error } = await db.from("kapitoly").insert({
-      kniha_id: vybranaKniha.id,
-      poradie,
+    const udaje = {
       nazov: riadokAleboNull($("nazovKapitoly").value),
       text,
-    });
-    if (error) return ukazHlasku(popisChyby(error), true);
+      koncept: $("konceptKapitoly").checked,
+    };
+    const koncept = udaje.koncept ? " Je to koncept, žiaci ju zatiaľ nevidia." : "";
 
-    $("nazovKapitoly").value = "";
-    $("textKapitoly").value = "";
-    ukazHlasku(`Kapitola ${kapitoly.length + 1} bola pridaná.`);
+    if (upravovanaKapitola) {
+      // Úprava existujúcej kapitoly
+      const { error } = await db.from("kapitoly").update(udaje).eq("id", upravovanaKapitola.id);
+      if (error) return ukazHlasku(popisChyby(error), true);
+      ukazHlasku("Zmeny v kapitole sú uložené." + koncept);
+    } else {
+      // Nová kapitola ide na koniec knihy
+      udaje.kniha_id = vybranaKniha.id;
+      udaje.poradie = kapitoly.length > 0 ? Math.max(...kapitoly.map((k) => k.poradie)) + 1 : 0;
+      const { error } = await db.from("kapitoly").insert(udaje);
+      if (error) return ukazHlasku(popisChyby(error), true);
+      ukazHlasku(`Kapitola ${kapitoly.length + 1} bola pridaná.` + koncept);
+    }
+
+    zrusUpravuKapitoly();
     await otvorKnihu(vybranaKniha);
   });
 });
@@ -227,20 +285,11 @@ async function posunKapitolu(index, smer) {
   await otvorKnihu(vybranaKniha);
 }
 
-async function premenujKapitolu(kap) {
-  const nazov = prompt("Názov kapitoly (nechaj prázdne pre „Kapitola 1, 2…“):", kap.nazov || "");
-  if (nazov === null) return;
-  const { error } = await db.from("kapitoly")
-    .update({ nazov: (riadokAleboNull(nazov) || "").slice(0, 100) || null })
-    .eq("id", kap.id);
-  if (error) return ukazHlasku(popisChyby(error), true);
-  await otvorKnihu(vybranaKniha);
-}
-
 async function zmazKapitolu(kap) {
   if (!confirm(`Zmazať kapitolu „${kap.nazov || "bez názvu"}“?\nZmaže sa aj postup žiakov v nej.`)) return;
   const { error } = await db.from("kapitoly").delete().eq("id", kap.id);
   if (error) return ukazHlasku(popisChyby(error), true);
+  if (upravovanaKapitola && upravovanaKapitola.id === kap.id) zrusUpravuKapitoly();
   ukazHlasku("Kapitola bola zmazaná.");
   await otvorKnihu(vybranaKniha);
 }

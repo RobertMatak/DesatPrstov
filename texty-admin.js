@@ -7,6 +7,7 @@ const MIN_DLZKA_TEXTU = 20;    // kratší text nemá na precvičovanie zmysel
 const MAX_DLZKA_TEXTU = 20000; // celá rozprávka; žiaci ho dostávajú po úryvkoch
 
 let textyTriedy = []; // texty, ktoré vidí vybraná trieda
+let upravovanyText = null; // text načítaný vo formulári na úpravu (null = pridávame nový)
 
 // Upraví vložený text tak, aby sa dal písať na klávesnici:
 // typografické úvodzovky a pomlčky z kníh a webu nahradí obyčajnými,
@@ -39,6 +40,8 @@ async function nacitajTexty() {
   if (error) return ukazHlasku(popisChyby(error), true);
 
   textyTriedy = data.filter((t) => t.trieda_id === null || t.trieda_id === vybranaTrieda.id);
+  // Upravovaný text v tejto triede nie je (napr. iná trieda) → zrušíme úpravu
+  if (upravovanyText && !textyTriedy.some((t) => t.id === upravovanyText.id)) zrusUpravuTextu();
   vykresliTexty();
 }
 
@@ -50,6 +53,7 @@ function vykresliTexty() {
 
   for (const t of textyTriedy) {
     const li = document.createElement("li");
+    if (upravovanyText && upravovanyText.id === t.id) li.classList.add("upravovany");
 
     const nahlad = document.createElement("span");
     nahlad.className = "nahlad";
@@ -78,12 +82,39 @@ function vykresliTexty() {
     li.append(
       nahlad,
       znacka,
-      tlacidlo("Zdroj", "druhotne", () => upravZdroj(t)), // tlacidlo je z admin.js
+      tlacidlo("Upraviť", "druhotne", () => upravText(t)), // tlacidlo je z admin.js
       tlacidlo("Zmazať", "nebezpecne", () => zmazText(t)),
     );
     zoznam.appendChild(li);
   }
 }
+
+// Ten istý formulár slúži na pridanie nového textu aj na úpravu existujúceho
+function upravText(t) {
+  upravovanyText = t;
+  $("novyText").value = t.text;
+  $("autorTextu").value = t.autor || "";
+  $("zdrojTextu").value = t.zdroj || "";
+  document.querySelector(`input[name=komuText][value=${t.trieda_id === null ? "vsetky" : "trieda"}]`).checked = true;
+  $("pridatText").textContent = "Uložiť zmeny";
+  $("zrusitUpravuTextu").classList.remove("skryty");
+  vykresliTexty(); // zvýrazní upravovaný text
+  $("autorTextu").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("novyText").focus({ preventScroll: true });
+}
+
+function zrusUpravuTextu() {
+  upravovanyText = null;
+  for (const id of ["novyText", "autorTextu", "zdrojTextu"]) $(id).value = "";
+  document.querySelector("input[name=komuText][value=trieda]").checked = true;
+  $("pridatText").textContent = "Pridať text";
+  $("zrusitUpravuTextu").classList.add("skryty");
+}
+
+$("zrusitUpravuTextu").addEventListener("click", () => {
+  zrusUpravuTextu();
+  vykresliTexty();
+});
 
 $("pridatText").addEventListener("click", () => {
   sTlacidlom($("pridatText"), async () => {
@@ -99,51 +130,44 @@ $("pridatText").addEventListener("click", () => {
     if (zle.length > 0) {
       return ukazHlasku(`Tieto znaky sa nedajú napísať na slovenskej klávesnici, oprav ich: ${zle.join("  ")}`, true);
     }
-    if (textyTriedy.some((t) => t.text === text)) {
+    if (textyTriedy.some((t) => t.text === text && (!upravovanyText || t.id !== upravovanyText.id))) {
       return ukazHlasku("Tento text už trieda má.", true);
     }
 
     const preVsetky = document.querySelector("input[name=komuText]:checked").value === "vsetky";
     const jedenRiadok = (id) => $(id).value.trim().replace(/\s+/g, " ") || null; // prázdne → null
-    const { error } = await db.from("texty").insert({
+    const udaje = {
       text,
       autor: jedenRiadok("autorTextu"),
       zdroj: jedenRiadok("zdrojTextu"),
       trieda_id: preVsetky ? null : vybranaTrieda.id,
-    });
-    if (error) return ukazHlasku(popisChyby(error), true);
+    };
 
-    for (const id of ["novyText", "autorTextu", "zdrojTextu"]) $(id).value = "";
-    ukazHlasku(preVsetky ? "Text bol pridaný pre všetky tvoje triedy." : `Text bol pridaný pre triedu ${vybranaTrieda.nazov}.`);
+    if (upravovanyText) {
+      const { error } = await db.from("texty").update(udaje).eq("id", upravovanyText.id);
+      if (error) return ukazHlasku(popisChyby(error), true);
+      ukazHlasku("Zmeny v texte sú uložené.");
+    } else {
+      const { error } = await db.from("texty").insert(udaje);
+      if (error) return ukazHlasku(popisChyby(error), true);
+      ukazHlasku(preVsetky ? "Text bol pridaný pre všetky tvoje triedy." : `Text bol pridaný pre triedu ${vybranaTrieda.nazov}.`);
+    }
+
+    zrusUpravuTextu();
     await nacitajTexty();
   });
 });
-
-// Doplnenie alebo oprava autora a zdroja pri už pridanom texte
-async function upravZdroj(t) {
-  const autor = prompt("Autor textu (nechaj prázdne, ak nie je):", t.autor || "");
-  if (autor === null) return; // Zrušiť
-  const zdroj = prompt("Zdroj: kniha, vydanie alebo webová adresa:", t.zdroj || "");
-  if (zdroj === null) return;
-
-  const { error } = await db.from("texty").update({
-    autor: autor.trim().slice(0, 100) || null,
-    zdroj: zdroj.trim().slice(0, 300) || null,
-  }).eq("id", t.id);
-  if (error) return ukazHlasku(popisChyby(error), true);
-  ukazHlasku("Zdroj bol uložený.");
-  await nacitajTexty();
-}
 
 async function zmazText(t) {
   const upozornenie = t.trieda_id === null
     ? "Tento text je pre VŠETKY tvoje triedy, zmizne zo všetkých."
     : `Text zmizne z triedy ${vybranaTrieda.nazov}.`;
   const popis = t.nazov || t.text.slice(0, 60) + "…";
-  if (!confirm(`Zmazať text „${popis}“?\n${upozornenie}\nVýsledky žiakov ostanú, ich postup v tomto príbehu sa zmaže.`)) return;
+  if (!confirm(`Zmazať text „${popis}“?\n${upozornenie}\nVýsledky žiakov ostanú.`)) return;
 
   const { error } = await db.from("texty").delete().eq("id", t.id);
   if (error) return ukazHlasku(popisChyby(error), true);
+  if (upravovanyText && upravovanyText.id === t.id) zrusUpravuTextu();
   ukazHlasku("Text bol zmazaný.");
   await nacitajTexty();
 }
