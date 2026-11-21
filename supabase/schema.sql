@@ -362,3 +362,16 @@ grant  execute on function public.prihlas_ziaka(text) to anon, authenticated;
 grant  execute on function public.uloz_vysledok(text, text, int, int, int, int, jsonb) to anon, authenticated;
 grant  execute on function public.moje_vysledky(text) to anon, authenticated;
 grant  execute on function public.texty_pre_ziaka(text) to anon, authenticated;
+
+
+-- ---------------------------------------------------------------------
+--  Oprávnenia na tabuľky pre prihláseného učiteľa
+--  (Supabase ich novým tabuľkám nedáva, pravidlá RLS stále určujú riadky)
+-- ---------------------------------------------------------------------
+grant select, insert, update, delete on public.triedy, public.ziaci, public.texty to authenticated;
+grant select, delete on public.vysledky, public.statistika_klavesov to authenticated;
+
+-- Odobratie oprávnení, ktoré aplikácia nepotrebuje (TRUNCATE by obišiel pravidlá RLS)
+revoke truncate, trigger, references
+  on public.triedy, public.ziaci, public.vysledky, public.statistika_klavesov, public.texty
+  from authenticated;

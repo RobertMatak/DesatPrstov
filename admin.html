@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex"> <!-- vyhľadávače túto stránku nemajú zobrazovať -->
+  <title>Desať Prstov – pre učiteľa</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- ===== Prihlásenie ===== -->
+  <section id="prihlasenie" class="karta prihlasenie skryty">
+    <h1>Desať Prstov</h1>
+    <p class="sivy">Prihlásenie pre učiteľa</p>
+    <form id="prihlasenieForm">
+      <label>E-mail
+        <input type="email" id="email" autocomplete="username" required>
+      </label>
+      <label>Heslo
+        <input type="password" id="heslo" autocomplete="current-password" required>
+      </label>
+      <button type="submit">Prihlásiť sa</button>
+      <p id="prihlasenieChyba" class="chyba"></p>
+    </form>
+  </section>
+
+  <!-- ===== Hlavná časť (po prihlásení) ===== -->
+  <div id="aplikacia" class="skryty">
+    <header class="hlavicka">
+      <h1>Desať Prstov <span class="sivy">– pre učiteľa</span></h1>
+      <div>
+        <span id="kto" class="sivy"></span>
+        <button id="odhlasit" class="druhotne">Odhlásiť</button>
+      </div>
+    </header>
+
+    <p id="hlaska" class="hlaska skryty"></p>
+
+    <main class="rozlozenie">
+      <!-- Ľavý stĺpec: triedy -->
+      <section class="karta">
+        <h2>Triedy</h2>
+        <ul id="zoznamTried" class="zoznam-tried"></ul>
+        <p id="ziadneTriedy" class="sivy skryty">Zatiaľ nemáš žiadnu triedu.</p>
+        <form id="novaTriedaForm" class="riadok">
+          <input id="novaTrieda" placeholder="Napr. 5.A" maxlength="50" required>
+          <button type="submit">Pridať</button>
+        </form>
+      </section>
+
+      <!-- Pravý stĺpec: vybraná trieda -->
+      <section class="karta">
+        <p id="vyberTriedu" class="sivy">Vyber triedu vľavo alebo vytvor novú.</p>
+
+        <div id="detailTriedy" class="skryty">
+          <div class="nadpis-triedy">
+            <h2 id="nazovTriedy"></h2>
+            <div>
+              <button id="tlacitKarticky">Vytlačiť kartičky</button>
+              <button id="premenovatTriedu" class="druhotne">Premenovať</button>
+              <button id="zmazatTriedu" class="nebezpecne">Zmazať triedu</button>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr><th>Meno</th><th>Kód</th><th>Stav</th><th></th></tr>
+            </thead>
+            <tbody id="zoznamZiakov"></tbody>
+          </table>
+          <p id="ziadniZiaci" class="sivy skryty">V triede zatiaľ nie sú žiaci.</p>
+
+          <h3>Pridať žiakov</h3>
+          <p class="sivy">Každého žiaka napíš na nový riadok: krstné meno a začiatočné písmeno priezviska (napr. Janko M.). Kódy sa vytvoria samy.</p>
+          <form id="noviZiaciForm">
+            <textarea id="noviZiaci" rows="5" placeholder="Janko M.&#10;Zuzka K.&#10;Peter H."></textarea>
+            <button type="submit">Pridať žiakov</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== Kartičky na tlač (na obrazovke sú skryté) ===== -->
+  <div id="karticky" class="karticky"></div>
+
+  <!-- Poradie je dôležité: knižnica → nastavenia → náš kód -->
+  <script src="supabase.js"></script>
+  <script src="supabase-nastavenia.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

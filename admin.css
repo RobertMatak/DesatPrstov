@@ -1,0 +1,208 @@
+body {
+  font-family: system-ui, sans-serif;
+  background: #f6f4ef;
+  color: #222;
+  margin: 0;
+  padding: 24px;
+}
+
+h1 { margin: 0; }
+h2 { margin: 0 0 12px; }
+h3 { margin: 28px 0 4px; }
+
+.sivy { color: #777; font-weight: normal; }
+.chyba { color: #d9443b; }
+.skryty { display: none !important; }
+
+.karta {
+  background: white;
+  padding: 20px 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== Formuláre a tlačidlá ===== */
+input, textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  margin-bottom: 10px;
+}
+
+button {
+  font: inherit;
+  font-size: 15px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #222;
+  color: white;
+  cursor: pointer;
+}
+
+button.druhotne { background: #e4e1d9; color: #222; }
+button.nebezpecne { background: #fbe3e1; color: #b3261e; }
+button.male { font-size: 13px; padding: 5px 10px; }
+button:disabled { opacity: 0.5; cursor: wait; }
+
+.riadok {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.riadok input { flex: 1; min-width: 0; }
+
+/* ===== Prihlásenie ===== */
+.prihlasenie {
+  max-width: 360px;
+  margin: 80px auto;
+}
+
+.prihlasenie label {
+  display: block;
+  margin: 14px 0;
+  color: #555;
+}
+
+.prihlasenie input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* ===== Hlavná časť ===== */
+.hlavicka {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto 20px;
+}
+
+.hlavicka div { display: flex; gap: 12px; align-items: center; }
+
+.hlaska {
+  max-width: 1100px;
+  margin: 0 auto 16px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #e7f4e4;
+}
+
+.hlaska.chyba { background: #fbe3e1; color: #b3261e; }
+
+.rozlozenie {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* Zoznam tried */
+.zoznam-tried {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.zoznam-tried li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.zoznam-tried li:hover { background: #f3f1eb; }
+.zoznam-tried li.vybrana { background: #222; color: white; }
+.zoznam-tried li.vybrana .sivy { color: #ccc; }
+
+/* Detail triedy */
+.nadpis-triedy {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.nadpis-triedy h2 { margin: 0; }
+.nadpis-triedy div { display: flex; gap: 8px; flex-wrap: wrap; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  color: #777;
+  font-weight: normal;
+  border-bottom: 2px solid #eee;
+  padding: 6px 8px;
+}
+
+td {
+  border-bottom: 1px solid #eee;
+  padding: 6px 8px;
+}
+
+td.akcie {
+  text-align: right;
+  white-space: nowrap;
+}
+
+td.akcie button { margin-left: 4px; }
+
+.kod {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+tr.vypnuty td { color: #aaa; }
+tr.vypnuty .kod { text-decoration: line-through; }
+
+/* ===== Kartičky na tlač ===== */
+.karticky { display: none; }
+
+@media print {
+  body { background: white; padding: 0; }
+
+  /* Pri tlači schováme všetko okrem kartičiek */
+  body > *:not(.karticky) { display: none !important; }
+
+  .karticky {
+    display: grid;
+    grid-template-columns: 1fr 1fr;   /* 2 kartičky vedľa seba */
+    gap: 0;
+  }
+
+  .karticka {
+    border: 1px dashed #999;           /* čiara na strihanie */
+    padding: 18px 20px;
+    break-inside: avoid;               /* kartička sa nerozdelí na dve strany */
+  }
+
+  .karticka .app { font-size: 12px; color: #555; }
+  .karticka .meno { font-size: 20px; font-weight: bold; margin: 6px 0 2px; }
+  .karticka .trieda { font-size: 14px; color: #555; }
+  .karticka .kod {
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    margin: 12px 0 6px;
+  }
+  .karticka .adresa { font-size: 12px; color: #555; }
+}

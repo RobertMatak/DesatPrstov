@@ -1,0 +1,342 @@
+// ===== Desať Prstov – stránka pre učiteľa =====
+// Všetky dotazy idú cez "db" (supabase-nastavenia.js).
+// Čo učiteľ smie vidieť a meniť, strážia pravidlá v databáze, nie tento kód.
+//
+// Novinka oproti aplikácii: async / await.
+// Dotaz do databázy chvíľu trvá. "await" znamená „počkaj na odpoveď a až potom
+// pokračuj ďalším riadkom“. Funkcia, ktorá používa await, musí byť "async".
+// Každý dotaz vráti { data, error }: buď dáta, alebo popis chyby.
+
+const $ = (id) => document.getElementById(id); // skratka, aby sme nepísali stále document.getElementById
+
+const ADRESA_APLIKACIE = "robertmatak.github.io/DesatPrstov";
+const MAX_DLZKA_MENA = 50;
+
+let triedy = [];           // triedy prihláseného učiteľa
+let vybranaTrieda = null;  // trieda, ktorej žiakov práve vidíme
+let ziaci = [];            // žiaci vybranej triedy
+
+// Porovnávanie podľa slovenskej abecedy (Č za C, Š za S…) a čísel (5.A pred 10.A)
+const podlaAbecedy = (a, b) => a.localeCompare(b, "sk", { numeric: true });
+
+
+// ===== Hlásenia =====
+let casovacHlasky = null;
+
+function ukazHlasku(text, jeChyba = false) {
+  const el = $("hlaska");
+  el.textContent = text;
+  el.classList.toggle("chyba", jeChyba);
+  el.classList.remove("skryty");
+  clearTimeout(casovacHlasky);
+  casovacHlasky = setTimeout(() => el.classList.add("skryty"), jeChyba ? 8000 : 3000);
+}
+
+// Prevedie chybu z databázy na zrozumiteľnú vetu
+function popisChyby(chyba) {
+  if (chyba.code === "23505") return "Taký záznam už existuje.";
+  if (chyba.code === "23514") return "Údaj má nesprávnu dĺžku (napr. prázdny alebo príliš dlhý názov).";
+  if (chyba.code === "42501") return "Na túto akciu nemáš oprávnenie.";
+  return "Chyba: " + (chyba.message || "neznáma chyba");
+}
+
+// Počas čakania na databázu tlačidlo vypneme, aby sa nedalo kliknúť dvakrát
+async function sTlacidlom(tlacidlo, akcia) {
+  if (tlacidlo) tlacidlo.disabled = true;
+  try {
+    await akcia();
+  } finally {
+    if (tlacidlo) tlacidlo.disabled = false;
+  }
+}
+
+
+// ===== Prihlásenie a odhlásenie =====
+async function zobrazPodlaPrihlasenia() {
+  const { data } = await db.auth.getSession();
+  const prihlaseny = data.session !== null;
+
+  $("prihlasenie").classList.toggle("skryty", prihlaseny);
+  $("aplikacia").classList.toggle("skryty", !prihlaseny);
+
+  if (prihlaseny) {
+    $("kto").textContent = data.session.user.email;
+    await nacitajTriedy();
+  }
+}
+
+$("prihlasenieForm").addEventListener("submit", (udalost) => {
+  udalost.preventDefault(); // formulár by inak znovu načítal stránku
+  sTlacidlom(udalost.submitter, async () => {
+    $("prihlasenieChyba").textContent = "";
+    const { error } = await db.auth.signInWithPassword({
+      email: $("email").value.trim(),
+      password: $("heslo").value,
+    });
+    if (error) {
+      $("prihlasenieChyba").textContent =
+        error.message === "Invalid login credentials" ? "Nesprávny e-mail alebo heslo." : error.message;
+      return;
+    }
+    $("heslo").value = "";
+    await zobrazPodlaPrihlasenia();
+  });
+});
+
+$("odhlasit").addEventListener("click", async () => {
+  await db.auth.signOut();
+  triedy = [];
+  ziaci = [];
+  vybranaTrieda = null;
+  await zobrazPodlaPrihlasenia();
+});
+
+
+// ===== Triedy =====
+async function nacitajTriedy() {
+  // "ziaci(count)" pridá ku každej triede počet jej žiakov
+  const { data, error } = await db.from("triedy").select("id, nazov, ziaci(count)");
+  if (error) return ukazHlasku(popisChyby(error), true);
+
+  triedy = data.sort((a, b) => podlaAbecedy(a.nazov, b.nazov));
+
+  // Ak bola vybraná trieda zmazaná, zrušíme výber
+  if (vybranaTrieda) {
+    vybranaTrieda = triedy.find((t) => t.id === vybranaTrieda.id) || null;
+  }
+  vykresliTriedy();
+  await vykresliDetail();
+}
+
+function vykresliTriedy() {
+  const zoznam = $("zoznamTried");
+  zoznam.innerHTML = "";
+  $("ziadneTriedy").classList.toggle("skryty", triedy.length > 0);
+
+  for (const trieda of triedy) {
+    const li = document.createElement("li");
+    if (vybranaTrieda && trieda.id === vybranaTrieda.id) li.classList.add("vybrana");
+
+    const nazov = document.createElement("span");
+    nazov.textContent = trieda.nazov;
+    const pocet = document.createElement("span");
+    pocet.className = "sivy";
+    pocet.textContent = trieda.ziaci[0].count + " ž.";
+
+    li.append(nazov, pocet);
+    li.addEventListener("click", async () => {
+      vybranaTrieda = trieda;
+      vykresliTriedy();
+      await vykresliDetail();
+    });
+    zoznam.appendChild(li);
+  }
+}
+
+$("novaTriedaForm").addEventListener("submit", (udalost) => {
+  udalost.preventDefault();
+  sTlacidlom(udalost.submitter, async () => {
+    const nazov = $("novaTrieda").value.trim();
+    if (!nazov) return;
+    if (triedy.some((t) => t.nazov.toLowerCase() === nazov.toLowerCase())) {
+      return ukazHlasku(`Trieda ${nazov} už existuje.`, true);
+    }
+
+    // .select().single() vráti práve vytvorenú triedu (aj s jej id)
+    const { data, error } = await db.from("triedy").insert({ nazov }).select().single();
+    if (error) return ukazHlasku(popisChyby(error), true);
+
+    $("novaTrieda").value = "";
+    vybranaTrieda = data;
+    ukazHlasku(`Trieda ${nazov} bola vytvorená.`);
+    await nacitajTriedy();
+  });
+});
+
+$("premenovatTriedu").addEventListener("click", async () => {
+  const novy = prompt("Nový názov triedy:", vybranaTrieda.nazov);
+  if (novy === null || !novy.trim() || novy.trim() === vybranaTrieda.nazov) return;
+
+  const { error } = await db.from("triedy").update({ nazov: novy.trim() }).eq("id", vybranaTrieda.id);
+  if (error) return ukazHlasku(popisChyby(error), true);
+  ukazHlasku("Trieda bola premenovaná.");
+  await nacitajTriedy();
+});
+
+$("zmazatTriedu").addEventListener("click", async () => {
+  // Mazanie triedy zmaže aj žiakov a ich výsledky, preto chceme potvrdenie názvom
+  const odpoved = prompt(
+    `Zmazaním triedy ${vybranaTrieda.nazov} sa zmažú aj všetci jej žiaci (${ziaci.length}) ` +
+    `a všetky ich výsledky. Toto sa nedá vrátiť.\n\nNa potvrdenie napíš názov triedy:`
+  );
+  if (odpoved === null) return;
+  if (odpoved.trim() !== vybranaTrieda.nazov) {
+    return ukazHlasku("Názov sa nezhoduje, trieda nebola zmazaná.", true);
+  }
+
+  const { error } = await db.from("triedy").delete().eq("id", vybranaTrieda.id);
+  if (error) return ukazHlasku(popisChyby(error), true);
+  ukazHlasku(`Trieda ${vybranaTrieda.nazov} bola zmazaná.`);
+  vybranaTrieda = null;
+  await nacitajTriedy();
+});
+
+
+// ===== Žiaci vybranej triedy =====
+async function vykresliDetail() {
+  $("vyberTriedu").classList.toggle("skryty", vybranaTrieda !== null);
+  $("detailTriedy").classList.toggle("skryty", vybranaTrieda === null);
+  if (!vybranaTrieda) return;
+
+  $("nazovTriedy").textContent = vybranaTrieda.nazov;
+  await nacitajZiakov();
+}
+
+async function nacitajZiakov() {
+  const { data, error } = await db
+    .from("ziaci")
+    .select("id, meno, kod, aktivny")
+    .eq("trieda_id", vybranaTrieda.id);
+  if (error) return ukazHlasku(popisChyby(error), true);
+
+  ziaci = data.sort((a, b) => podlaAbecedy(a.meno, b.meno));
+  vykresliZiakov();
+}
+
+function vykresliZiakov() {
+  const telo = $("zoznamZiakov");
+  telo.innerHTML = "";
+  $("ziadniZiaci").classList.toggle("skryty", ziaci.length > 0);
+
+  for (const ziak of ziaci) {
+    const tr = document.createElement("tr");
+    if (!ziak.aktivny) tr.classList.add("vypnuty");
+
+    const meno = document.createElement("td");
+    meno.textContent = ziak.meno;
+
+    const kod = document.createElement("td");
+    kod.className = "kod";
+    kod.textContent = ziak.kod;
+
+    const stav = document.createElement("td");
+    stav.textContent = ziak.aktivny ? "aktívny" : "vypnutý";
+
+    const akcie = document.createElement("td");
+    akcie.className = "akcie";
+    akcie.append(
+      tlacidlo("Nový kód", "druhotne", () => novyKod(ziak)),
+      tlacidlo(ziak.aktivny ? "Vypnúť" : "Zapnúť", "druhotne", () => prepniAktivny(ziak)),
+      tlacidlo("Zmazať", "nebezpecne", () => zmazZiaka(ziak)),
+    );
+
+    tr.append(meno, kod, stav, akcie);
+    telo.appendChild(tr);
+  }
+}
+
+// Vytvorí malé tlačidlo s textom, ktoré po kliknutí spustí akciu
+function tlacidlo(text, trieda, akcia) {
+  const b = document.createElement("button");
+  b.textContent = text;
+  b.className = trieda + " male";
+  b.addEventListener("click", () => sTlacidlom(b, akcia));
+  return b;
+}
+
+$("noviZiaciForm").addEventListener("submit", (udalost) => {
+  udalost.preventDefault();
+  sTlacidlom(udalost.submitter, async () => {
+    // Každý riadok je jeden žiak; prázdne riadky a nadbytočné medzery vynecháme
+    const mena = $("noviZiaci").value
+      .split("\n")
+      .map((m) => m.trim().replace(/\s+/g, " "))
+      .filter((m) => m.length > 0);
+    const jedinecne = [...new Set(mena)];
+
+    if (jedinecne.length === 0) return ukazHlasku("Napíš aspoň jedno meno.", true);
+    const dlhe = jedinecne.find((m) => m.length > MAX_DLZKA_MENA);
+    if (dlhe) return ukazHlasku(`Meno „${dlhe.slice(0, 30)}…“ je príliš dlhé (najviac ${MAX_DLZKA_MENA} znakov).`, true);
+
+    const uzSu = jedinecne.filter((m) => ziaci.some((z) => z.meno === m));
+    if (uzSu.length > 0) {
+      const pokracovat = confirm(`V triede už sú: ${uzSu.join(", ")}.\nPridať ich aj tak ešte raz?`);
+      if (!pokracovat) return;
+    }
+
+    const novi = jedinecne.map((meno) => ({ trieda_id: vybranaTrieda.id, meno }));
+    const { error } = await db.from("ziaci").insert(novi);
+    if (error) return ukazHlasku(popisChyby(error), true);
+
+    $("noviZiaci").value = "";
+    ukazHlasku(jedinecne.length === 1 ? "Žiak bol pridaný." : `Pridaných žiakov: ${jedinecne.length}.`);
+    await nacitajTriedy(); // obnoví počty v zozname tried aj žiakov
+  });
+});
+
+async function novyKod(ziak) {
+  const pokracovat = confirm(
+    `Vygenerovať nový kód pre ${ziak.meno}?\nStarý kód prestane fungovať a žiak sa bude musieť prihlásiť novým.`
+  );
+  if (!pokracovat) return;
+
+  // rpc = zavolanie funkcie v databáze (vygeneruj_novy_kod zo schema.sql)
+  const { error } = await db.rpc("vygeneruj_novy_kod", { p_ziak_id: ziak.id });
+  if (error) return ukazHlasku(popisChyby(error), true);
+  ukazHlasku(`${ziak.meno} má nový kód.`);
+  await nacitajZiakov();
+}
+
+async function prepniAktivny(ziak) {
+  const { error } = await db.from("ziaci").update({ aktivny: !ziak.aktivny }).eq("id", ziak.id);
+  if (error) return ukazHlasku(popisChyby(error), true);
+  ukazHlasku(ziak.aktivny
+    ? `${ziak.meno} je vypnutý: kód nefunguje, výsledky ostávajú.`
+    : `${ziak.meno} je znova aktívny.`);
+  await nacitajZiakov();
+}
+
+async function zmazZiaka(ziak) {
+  const pokracovat = confirm(
+    `Naozaj zmazať žiaka ${ziak.meno}?\nZmažú sa aj všetky jeho výsledky. Toto sa nedá vrátiť.\n\n` +
+    `(Ak ho chceš len dočasne zablokovať, použi radšej „Vypnúť“.)`
+  );
+  if (!pokracovat) return;
+
+  const { error } = await db.from("ziaci").delete().eq("id", ziak.id);
+  if (error) return ukazHlasku(popisChyby(error), true);
+  ukazHlasku(`${ziak.meno} bol zmazaný.`);
+  await nacitajTriedy();
+}
+
+
+// ===== Tlač kartičiek s kódmi =====
+$("tlacitKarticky").addEventListener("click", () => {
+  const aktivni = ziaci.filter((z) => z.aktivny);
+  if (aktivni.length === 0) return ukazHlasku("V triede nie sú žiadni aktívni žiaci.", true);
+
+  const karticky = $("karticky");
+  karticky.innerHTML = "";
+  for (const ziak of aktivni) {
+    const k = document.createElement("div");
+    k.className = "karticka";
+    for (const [trieda, text] of [
+      ["app", "Desať Prstov – písanie všetkými desiatimi"],
+      ["meno", ziak.meno],
+      ["trieda", "Trieda " + vybranaTrieda.nazov],
+      ["kod", ziak.kod],
+      ["adresa", ADRESA_APLIKACIE],
+    ]) {
+      const riadok = document.createElement("div");
+      riadok.className = trieda;
+      riadok.textContent = text;
+      k.appendChild(riadok);
+    }
+    karticky.appendChild(k);
+  }
+  window.print(); // otvorí okno tlače; na obrazovke sú kartičky skryté
+});
+
+
+// ===== Štart =====
+zobrazPodlaPrihlasenia();
