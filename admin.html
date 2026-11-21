@@ -63,20 +63,88 @@
             </div>
           </div>
 
-          <table>
-            <thead>
-              <tr><th>Meno</th><th>Kód</th><th>Stav</th><th></th></tr>
-            </thead>
-            <tbody id="zoznamZiakov"></tbody>
-          </table>
-          <p id="ziadniZiaci" class="sivy skryty">V triede zatiaľ nie sú žiaci.</p>
+          <!-- Záložky: Výsledky / Žiaci a kódy -->
+          <div class="prepinac zalozky">
+            <button data-zalozka="vysledky" class="aktivny">Výsledky</button>
+            <button data-zalozka="spravaZiakov">Žiaci a kódy</button>
+          </div>
 
-          <h3>Pridať žiakov</h3>
-          <p class="sivy">Každého žiaka napíš na nový riadok: krstné meno a začiatočné písmeno priezviska (napr. Janko M.). Kódy sa vytvoria samy.</p>
-          <form id="noviZiaciForm">
-            <textarea id="noviZiaci" rows="5" placeholder="Janko M.&#10;Zuzka K.&#10;Peter H."></textarea>
-            <button type="submit">Pridať žiakov</button>
-          </form>
+          <!-- ===== Záložka Výsledky (riadi vysledky-admin.js) ===== -->
+          <div id="zalozka-vysledky">
+            <p class="sivy">Priemery sú z posledných 10 textov. Kliknutím na nadpis stĺpca zoradíš, kliknutím na žiaka zobrazíš jeho detail.</p>
+            <table class="prehlad-triedy">
+              <thead>
+                <tr>
+                  <th data-stlpec="meno">Meno</th>
+                  <th data-stlpec="pocet">Textov</th>
+                  <th data-stlpec="priemer">Slov/min</th>
+                  <th data-stlpec="presnost">Presnosť</th>
+                  <th data-stlpec="rekord">Rekord</th>
+                  <th data-stlpec="naposledy">Naposledy</th>
+                </tr>
+              </thead>
+              <tbody id="prehladTriedy"></tbody>
+            </table>
+
+            <!-- Analýza: celá trieda alebo vybraný žiak -->
+            <div class="analyza">
+              <div class="nadpis-triedy">
+                <h3 id="nadpisAnalyzy"></h3>
+                <button id="celaTrieda" class="druhotne skryty">← Celá trieda</button>
+              </div>
+
+              <!-- Graf (len pre žiaka), nakreslí ho graf.js -->
+              <div id="grafKontajner" class="skryty">
+                <div class="prepinac">
+                  <button data-zobrazenie="rychlost" class="aktivny">Rýchlosť</button>
+                  <button data-zobrazenie="presnost">Presnosť</button>
+                </div>
+                <div class="graf"><canvas id="graf"></canvas></div>
+              </div>
+
+              <!-- Mapa chýb, vykreslí ju chyby.js -->
+              <div id="chybyKontajner" class="skryty">
+                <h4>Problémové klávesy</h4>
+                <p id="popisMapy" class="sivy"></p>
+                <div id="mapaChyb" class="klavesnica mala"></div>
+                <p id="problemoveZnaky" class="problemove"></p>
+              </div>
+              <p id="ziadneData" class="sivy skryty">Zatiaľ žiadne výsledky.</p>
+
+              <!-- Zoznam výsledkov žiaka s mazaním -->
+              <div id="vysledkyZiakaKontajner" class="skryty">
+                <div class="nadpis-triedy">
+                  <h4>Všetky výsledky</h4>
+                  <button id="zmazatVsetkyVysledky" class="nebezpecne male">Zmazať všetky výsledky žiaka</button>
+                </div>
+                <table>
+                  <thead>
+                    <tr><th>Kedy</th><th>Text</th><th>Slov/min</th><th>Presnosť</th><th>Chyby</th><th>Čas</th><th></th></tr>
+                  </thead>
+                  <tbody id="vysledkyZiakaRiadky"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Záložka Žiaci a kódy ===== -->
+          <div id="zalozka-spravaZiakov" class="skryty">
+            <table>
+              <thead>
+                <tr><th>Meno</th><th>Kód</th><th>Stav</th><th></th></tr>
+              </thead>
+              <tbody id="zoznamZiakov"></tbody>
+            </table>
+
+            <h3>Pridať žiakov</h3>
+            <p class="sivy">Každého žiaka napíš na nový riadok: krstné meno a začiatočné písmeno priezviska (napr. Janko M.). Kódy sa vytvoria samy.</p>
+            <form id="noviZiaciForm">
+              <textarea id="noviZiaci" rows="5" placeholder="Janko M.&#10;Zuzka K.&#10;Peter H."></textarea>
+              <button type="submit">Pridať žiakov</button>
+            </form>
+          </div>
+
+          <p id="ziadniZiaci" class="sivy skryty">V triede zatiaľ nie sú žiaci. Pridáš ich v záložke Žiaci a kódy.</p>
         </div>
       </section>
     </main>
@@ -85,9 +153,15 @@
   <!-- ===== Kartičky na tlač (na obrazovke sú skryté) ===== -->
   <div id="karticky" class="karticky"></div>
 
-  <!-- Poradie je dôležité: knižnica → nastavenia → náš kód -->
+  <!-- Poradie je dôležité: knižnice → nastavenia → spoločný kód s aplikáciou → náš kód -->
   <script src="supabase.js"></script>
+  <script src="chart.umd.min.js"></script>
   <script src="supabase-nastavenia.js"></script>
+  <script src="klavesnica.js"></script>  <!-- rozloženie klávesnice (pre mapu chýb) -->
+  <script src="vysledky.js"></script>    <!-- zhrnutie, formátovanie dátumu -->
+  <script src="graf.js"></script>        <!-- graf rýchlosti a presnosti -->
+  <script src="chyby.js"></script>       <!-- mapa chýb -->
   <script src="admin.js"></script>
+  <script src="vysledky-admin.js"></script>
 </body>
 </html>

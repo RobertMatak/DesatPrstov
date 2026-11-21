@@ -139,12 +139,12 @@ function vykresliGraf(vsetky) {
 
 // ===== Prepínač Rýchlosť / Presnosť =====
 // Každé tlačidlo má v HTML atribút data-zobrazenie="rychlost" alebo "presnost".
-for (const tlacidlo of document.querySelectorAll(".prepinac button")) {
+for (const tlacidlo of document.querySelectorAll(".prepinac button[data-zobrazenie]")) {
   tlacidlo.addEventListener("click", () => {
     zobrazenie = tlacidlo.dataset.zobrazenie;
 
     // Aktívne tlačidlo zvýrazníme, ostatné nie
-    for (const t of document.querySelectorAll(".prepinac button")) {
+    for (const t of document.querySelectorAll(".prepinac button[data-zobrazenie]")) {
       t.classList.toggle("aktivny", t === tlacidlo);
     }
     vykresliGraf(nacitajVysledky());

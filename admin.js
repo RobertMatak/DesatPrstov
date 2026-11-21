@@ -190,6 +190,21 @@ async function vykresliDetail() {
 
   $("nazovTriedy").textContent = vybranaTrieda.nazov;
   await nacitajZiakov();
+  if (ziaci.length === 0) prepniZalozku("spravaZiakov"); // prázdna trieda: rovno pridávanie žiakov
+  await nacitajVysledkyTriedy(); // vysledky-admin.js
+}
+
+// ===== Záložky Výsledky / Žiaci a kódy =====
+function prepniZalozku(nazov) {
+  for (const t of document.querySelectorAll(".zalozky button")) {
+    t.classList.toggle("aktivny", t.dataset.zalozka === nazov);
+  }
+  $("zalozka-vysledky").classList.toggle("skryty", nazov !== "vysledky");
+  $("zalozka-spravaZiakov").classList.toggle("skryty", nazov !== "spravaZiakov");
+}
+
+for (const t of document.querySelectorAll(".zalozky button")) {
+  t.addEventListener("click", () => prepniZalozku(t.dataset.zalozka));
 }
 
 async function nacitajZiakov() {
