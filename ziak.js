@@ -32,6 +32,9 @@ async function prihlas(kod) {
     // Výsledky zo starej verzie (uložené v prehliadači) už nepoužívame
     localStorage.removeItem("desatPrstov.vysledky");
     localStorage.removeItem("desatPrstov.klavesy");
+    // Voľby režimu z fázy 6 už nepoužívame
+    localStorage.removeItem("desatPrstov.rezim");
+    localStorage.removeItem("desatPrstov.pribeh");
   } catch (chyba) {}
 
   // Najprv pošleme výsledky, ktoré sa minule nepodarilo uložiť, potom načítame všetky
@@ -39,8 +42,7 @@ async function prihlas(kod) {
   const { data: udaje, error: chybaUdajov } = await db.rpc("moje_vysledky", { p_kod: kod });
   if (chybaUdajov || udaje === null) return "Nepodarilo sa načítať tvoje výsledky. Skús to znova.";
 
-  nacitajVolbyRezimu();          // pribehy.js: náhodné texty alebo príbeh
-  await nacitajUdajeZiaka(true); // pribehy.js: texty, dĺžka úryvku, postup v príbehoch
+  await nacitajUdajeZiaka(true); // pribehy.js: texty, knihy, dĺžka úryvku, postup v kapitolách
   nastavVysledky(udaje.vysledky);          // vysledky.js
   nastavStatistikuKlavesov(udaje.klavesy); // chyby.js
 

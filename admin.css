@@ -397,3 +397,7 @@ select {
 }
 
 .zdroj-v-zozname.chyba-zdroja { color: #b3261e; }
+
+/* ===== Kapitoly v knihe ===== */
+.zoznam-kapitol li { gap: 6px; }
+.zoznam-kapitol button.male { min-width: 30px; }

@@ -108,7 +108,7 @@ $("odhlasit").addEventListener("click", async () => {
   triedy = [];
   ziaci = [];
   vybranaTrieda = null;
-  for (const kluc of ["trieda", "zalozka", "ziak"]) zapamataj(kluc, null);
+  for (const kluc of ["trieda", "zalozka", "ziak", "kniha"]) zapamataj(kluc, null);
   await zobrazPodlaPrihlasenia();
 });
 
@@ -250,6 +250,7 @@ async function vykresliDetail() {
   if (ziaci.length === 0) prepniZalozku("spravaZiakov"); // prázdna trieda: rovno pridávanie žiakov
   await nacitajVysledkyTriedy(); // vysledky-admin.js
   await nacitajTexty();          // texty-admin.js
+  await nacitajKnihy();          // knihy-admin.js
 }
 
 // ===== Záložky Výsledky / Žiaci a kódy =====
@@ -257,7 +258,7 @@ function prepniZalozku(nazov) {
   for (const t of document.querySelectorAll(".zalozky button")) {
     t.classList.toggle("aktivny", t.dataset.zalozka === nazov);
   }
-  for (const z of ["vysledky", "spravaZiakov", "texty"]) {
+  for (const z of ["vysledky", "spravaZiakov", "texty", "knihy"]) {
     $("zalozka-" + z).classList.toggle("skryty", nazov !== z);
   }
   zapamataj("zalozka", nazov);

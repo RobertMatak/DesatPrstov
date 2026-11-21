@@ -130,7 +130,7 @@ function koniec() {
     }, klavesy);
     vykresliVysledky();
   }
-  poDopisaniUryvku(); // pribehy.js: postup v príbehu a obnovenie textov od učiteľa
+  poDopisaniUryvku(); // kniznica.js: postup v kapitole a obnovenie textov od učiteľa
 
   vysledokEl.classList.remove("skryty");
 }
@@ -210,6 +210,7 @@ vstup.addEventListener("keyup", (udalost) => pustiKlaves(udalost.code));
 document.addEventListener("click", (udalost) => {
   if (udalost.target.closest("input, textarea, button, label, select")) return;
   if (document.getElementById("aplikacia").classList.contains("skryty")) return;
+  if (document.getElementById("obrazovka-pisanie").classList.contains("skryty")) return; // knižnica, výsledky
   vstup.focus();
 });
 vstup.addEventListener("blur", () => {
@@ -226,6 +227,6 @@ document.getElementById("zopakovat").addEventListener("click", zacniCvicenie);
 // Aplikácia sa spustí až po prihlásení žiaka (volá ju ziak.js)
 function spustiAplikaciu() {
   vykresliKlavesnicu(klavesnicaEl);
-  vykresliVysledky();
-  dalsiText();
+  ukazObrazovku("pisanie"); // kniznica.js: začíname náhodnými textami
+  dalsiText();              // pribehy.js
 }

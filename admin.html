@@ -89,7 +89,8 @@
           <div class="prepinac zalozky">
             <button data-zalozka="vysledky" class="aktivny">Výsledky</button>
             <button data-zalozka="spravaZiakov">Žiaci a kódy</button>
-            <button data-zalozka="texty">Texty</button>
+            <button data-zalozka="texty">Náhodné texty</button>
+            <button data-zalozka="knihy">Knihy</button>
           </div>
 
           <!-- ===== Záložka Výsledky (riadi vysledky-admin.js) ===== -->
@@ -167,24 +168,66 @@
             </form>
           </div>
 
-          <!-- ===== Záložka Texty (riadi texty-admin.js) ===== -->
+          <!-- ===== Záložka Náhodné texty (riadi texty-admin.js) ===== -->
           <div id="zalozka-texty" class="skryty">
-            <p class="sivy">Text môže byť aj celý príbeh. Žiaci ho dostávajú po úryvkoch: v režime <b>Príbeh</b> postupne od začiatku, v režime <b>Náhodné texty</b> náhodné úryvky z tvojich aj 10 vstavaných textov. <span id="dlzkaPreTriedu"></span></p>
-            <input id="nazovTextu" class="cela-sirka" placeholder="Názov príbehu (napr. Soľ nad zlato), nepovinné" maxlength="100">
+            <p class="sivy">Z týchto textov a z 10 vstavaných dostávajú žiaci v časti <b>Náhodné texty</b> náhodné úryvky. Knihy sem nepatria, tie sú v záložke Knihy. <span id="dlzkaPreTriedu"></span></p>
             <div class="zdroj-polia">
               <input id="autorTextu" placeholder="Autor (napr. Pavol Dobšinský)" maxlength="100">
               <input id="zdrojTextu" placeholder="Zdroj: kniha, vydanie alebo webová adresa" maxlength="300">
             </div>
-            <textarea id="novyText" rows="8" placeholder="Sem vlož alebo napíš text, pokojne aj celý príbeh (do 20 000 znakov)…"></textarea>
+            <textarea id="novyText" rows="8" placeholder="Sem vlož alebo napíš text (20 až 20 000 znakov)…"></textarea>
             <div class="volby-textu">
               <label><input type="radio" name="komuText" value="trieda" checked> len pre triedu <span id="nazovTriedyTexty"></span></label>
               <label><input type="radio" name="komuText" value="vsetky"> pre všetky moje triedy</label>
             </div>
             <button id="pridatText">Pridať text</button>
 
-            <h3>Texty pre túto triedu <span id="pocetTextov" class="sivy"></span></h3>
+            <h3>Náhodné texty pre túto triedu <span id="pocetTextov" class="sivy"></span></h3>
             <ul id="zoznamTextov" class="zoznam-textov"></ul>
             <p id="ziadneTexty" class="sivy skryty">Zatiaľ žiadne. Žiaci píšu len vstavané texty.</p>
+          </div>
+
+          <!-- ===== Záložka Knihy (riadi knihy-admin.js) ===== -->
+          <div id="zalozka-knihy" class="skryty">
+            <!-- Zoznam kníh -->
+            <div id="zoznamKnihPohlad">
+              <p class="sivy">Knihy žiaci píšu v časti <b>Príbehy</b>, kapitolu po kapitole. Do náhodných textov sa nedostanú, musia si ich „vypísať“.</p>
+              <ul id="zoznamKnih" class="zoznam-textov"></ul>
+              <p id="ziadneKnihy" class="sivy skryty">Zatiaľ žiadne knihy.</p>
+
+              <h3>Nová kniha</h3>
+              <input id="nazovKnihy" class="cela-sirka" placeholder="Názov knihy (napr. Soľ nad zlato)" maxlength="100">
+              <div class="zdroj-polia">
+                <input id="autorKnihy" placeholder="Autor (napr. Pavol Dobšinský)" maxlength="100">
+                <input id="zdrojKnihy" placeholder="Zdroj: kniha, vydanie alebo webová adresa" maxlength="300">
+              </div>
+              <div class="volby-textu">
+                <label><input type="radio" name="komuKniha" value="trieda" checked> len pre triedu <span id="nazovTriedyKnihy"></span></label>
+                <label><input type="radio" name="komuKniha" value="vsetky"> pre všetky moje triedy</label>
+              </div>
+              <button id="pridatKnihu">Vytvoriť knihu</button>
+            </div>
+
+            <!-- Otvorená kniha s kapitolami -->
+            <div id="detailKnihyPohlad" class="skryty">
+              <div class="nadpis-triedy">
+                <button id="spatNaKnihy" class="druhotne">← Všetky knihy</button>
+                <div>
+                  <button id="upravitKnihu" class="druhotne">Upraviť názov a zdroj</button>
+                  <button id="zmazatKnihu" class="nebezpecne">Zmazať knihu</button>
+                </div>
+              </div>
+              <h3 id="nazovVybranejKnihy"></h3>
+              <p id="popisVybranejKnihy" class="sivy"></p>
+
+              <ol id="zoznamKapitol" class="zoznam-textov zoznam-kapitol"></ol>
+              <p id="ziadneKapitoly" class="sivy skryty">Kniha zatiaľ nemá kapitoly. Pridaj prvú nižšie.</p>
+
+              <h3>Pridať kapitolu</h3>
+              <input id="nazovKapitoly" class="cela-sirka" placeholder="Názov kapitoly (napr. Kráľ a tri dcéry), nepovinné" maxlength="100">
+              <textarea id="textKapitoly" rows="8" placeholder="Text kapitoly (20 až 20 000 znakov)…"></textarea>
+              <button id="pridatKapitolu">Pridať kapitolu</button>
+            </div>
           </div>
 
           <p id="ziadniZiaci" class="sivy skryty">V triede zatiaľ nie sú žiaci. Pridáš ich v záložke Žiaci a kódy.</p>
@@ -208,5 +251,6 @@
   <script src="vysledky-admin.js"></script>
   <script src="texty-admin.js"></script>
   <script src="dlzky-admin.js"></script>
+  <script src="knihy-admin.js"></script>
 </body>
 </html>

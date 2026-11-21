@@ -19,112 +19,149 @@
     <p id="prihlasenieChyba" class="chyba-text"></p>
   </section>
 
-  <main id="aplikacia" class="skryty">
-    <!-- Kto je prihlásený -->
-    <div class="ziak-lista">
-      <span><strong id="menoZiaka"></strong> · <span id="triedaZiaka"></span></span>
-      <button id="odhlasitZiaka" class="druhotne">Odhlásiť</button>
-    </div>
+  <!-- ===== Aplikácia po prihlásení: menu vľavo, obrazovky vpravo ===== -->
+  <div id="aplikacia" class="aplikacia skryty">
 
-    <h1>Desať Prstov</h1>
-    <p class="navod">Klikni na text a začni písať. Chybu opravíš klávesom Backspace.</p>
-
-    <!-- Režim: náhodné texty alebo príbeh na pokračovanie (riadi pribehy.js) -->
-    <div class="volba-rezimu">
-      <div id="prepinacRezimu" class="prepinac">
-        <button data-rezim="nahodne">Náhodné texty</button>
-        <button data-rezim="pribeh">Príbeh</button>
+    <!-- Ľavé menu (riadi kniznica.js) -->
+    <aside class="menu">
+      <div class="menu-logo">Desať Prstov</div>
+      <nav class="menu-polozky">
+        <button data-menu="nahodne" class="aktivny">✏️ Náhodné texty</button>
+        <button data-menu="pribehy">📚 Príbehy</button>
+        <button data-menu="vysledky">📈 Moje výsledky</button>
+      </nav>
+      <div class="menu-ziak">
+        <strong id="menoZiaka"></strong>
+        <span id="triedaZiaka"></span>
+        <button id="odhlasitZiaka" class="druhotne">Odhlásiť</button>
       </div>
-      <select id="vyberPribehu" class="skryty"></select>
-      <span id="infoPribehu" class="info-pribehu"></span>
-    </div>
+    </aside>
 
-    <!-- Živé štatistiky počas písania -->
-    <div class="staty">
-      <span>Rýchlosť: <strong id="zivaRychlost">–</strong> slov/min</span>
-      <span>Presnosť: <strong id="zivaPresnost">100</strong> %</span>
-      <span>Chyby: <strong id="zivaChyby">0</strong></span>
-      <span>Čas: <strong id="zivyCas">0:00</strong></span>
-    </div>
+    <main class="obsah">
 
-    <!-- Sem JavaScript vloží text na prepisovanie, každé písmeno zvlášť -->
-    <div id="text" class="text"></div>
-    <!-- Autor a zdroj textu (vypĺňa pribehy.js) -->
-    <p id="zdrojTextu" class="zdroj-textu"></p>
-
-    <!-- Skryté políčko, ktoré v skutočnosti prijíma písanie z klávesnice -->
-    <input id="vstup" class="skryty-vstup" autocomplete="off" autocorrect="off"
-           autocapitalize="off" spellcheck="false">
-
-    <!-- Výsledok, zobrazí sa až po dopísaní textu -->
-    <div id="vysledok" class="vysledok skryty">
-      <h2>Hotovo! <span id="novyRekord" class="odznak skryty">Nový osobný rekord!</span></h2>
-      <div class="vysledok-cisla">
-        <div><strong id="vysledokRychlost"></strong><span>slov za minútu</span></div>
-        <div><strong id="vysledokPresnost"></strong><span>% presnosť</span></div>
-        <div><strong id="vysledokChyby"></strong><span>chýb</span></div>
-        <div><strong id="vysledokCas"></strong><span>čas</span></div>
-      </div>
-      <button id="dalsi">Ďalší text (Enter)</button>
-      <button id="zopakovat" class="druhotne">Zopakovať tento text</button>
-      <p id="stavUlozenia" class="stav-ulozenia"></p>
-      <p id="spravaPribehu" class="sprava-pribehu"></p>
-    </div>
-
-    <!-- Nápoveda: ktorý kláves stlačiť a ktorým prstom -->
-    <p id="napoveda" class="napoveda"></p>
-
-    <!-- Klávesnica na obrazovke, vykreslí ju klavesnica.js -->
-    <div id="klavesnica" class="klavesnica"></div>
-
-    <div class="legenda">
-      <span class="prst-m">malíček</span>
-      <span class="prst-p">prstenník</span>
-      <span class="prst-s">prostredník</span>
-      <span class="prst-u">ukazovák</span>
-      <span class="prst-a">palec</span>
-    </div>
-
-    <!-- Uložené výsledky, vykreslí ich vysledky.js -->
-    <section class="moje-vysledky">
-      <h2>Moje výsledky</h2>
-      <p id="ziadneVysledky" class="navod">Zatiaľ tu nič nie je. Dopíš prvý text a výsledok sa uloží sem.</p>
-
-      <div id="prehlad" class="vysledok-cisla skryty">
-        <div><strong id="rekord"></strong><span>osobný rekord (slov/min)</span></div>
-        <div><strong id="priemer"></strong><span>priemer posledných 10</span></div>
-        <div><strong id="priemernaPresnost"></strong><span>% priemerná presnosť</span></div>
-        <div><strong id="pocet"></strong><span>dopísaných textov</span></div>
-      </div>
-
-      <!-- Graf rýchlosti alebo presnosti, nakreslí ho graf.js -->
-      <div id="grafKontajner" class="skryty">
-        <div class="prepinac">
-          <button data-zobrazenie="rychlost" class="aktivny">Rýchlosť</button>
-          <button data-zobrazenie="presnost">Presnosť</button>
+      <!-- ===== Obrazovka: písanie (náhodné texty aj kapitoly kníh) ===== -->
+      <section id="obrazovka-pisanie">
+        <div class="hlavicka-pisania">
+          <button id="spatNaKapitoly" class="druhotne skryty">← Kapitoly</button>
+          <div>
+            <h1 id="nadpisPisania">Náhodné texty</h1>
+            <p id="podnadpisPisania" class="navod"></p>
+          </div>
         </div>
-        <div class="graf">
-          <canvas id="graf"></canvas>
+
+        <!-- Živé štatistiky počas písania -->
+        <div class="staty">
+          <span>Rýchlosť: <strong id="zivaRychlost">–</strong> slov/min</span>
+          <span>Presnosť: <strong id="zivaPresnost">100</strong> %</span>
+          <span>Chyby: <strong id="zivaChyby">0</strong></span>
+          <span>Čas: <strong id="zivyCas">0:00</strong></span>
         </div>
-      </div>
 
-      <!-- Mapa chýb na klávesnici, vykreslí ju chyby.js -->
-      <div id="chybyKontajner" class="skryty">
-        <h3>Problémové klávesy</h3>
-        <p class="navod">Čím červenejší kláves, tým častejšie sa na ňom mýliš. Prejdi myšou nad kláves pre podrobnosti.</p>
-        <div id="mapaChyb" class="klavesnica mala"></div>
-        <p id="problemoveZnaky" class="problemove"></p>
-      </div>
+        <!-- Sem JavaScript vloží text na prepisovanie, každé písmeno zvlášť -->
+        <div id="text" class="text"></div>
+        <!-- Autor a zdroj textu (vypĺňa pribehy.js / kniznica.js) -->
+        <p id="zdrojTextu" class="zdroj-textu"></p>
 
-      <table id="tabulka" class="skryty">
-        <thead>
-          <tr><th>Kedy</th><th>Text</th><th>Slov/min</th><th>Presnosť</th><th>Chyby</th><th>Čas</th></tr>
-        </thead>
-        <tbody id="riadky"></tbody>
-      </table>
+        <!-- Skryté políčko, ktoré v skutočnosti prijíma písanie z klávesnice -->
+        <input id="vstup" class="skryty-vstup" autocomplete="off" autocorrect="off"
+               autocapitalize="off" spellcheck="false">
 
-    </section>
-  </main>
+        <!-- Výsledok, zobrazí sa až po dopísaní textu -->
+        <div id="vysledok" class="vysledok skryty">
+          <h2>Hotovo! <span id="novyRekord" class="odznak skryty">Nový osobný rekord!</span></h2>
+          <div class="vysledok-cisla">
+            <div><strong id="vysledokRychlost"></strong><span>slov za minútu</span></div>
+            <div><strong id="vysledokPresnost"></strong><span>% presnosť</span></div>
+            <div><strong id="vysledokChyby"></strong><span>chýb</span></div>
+            <div><strong id="vysledokCas"></strong><span>čas</span></div>
+          </div>
+          <p id="spravaKapitoly" class="sprava-pribehu"></p>
+          <button id="dalsi">Ďalší text (Enter)</button>
+          <button id="zopakovat" class="druhotne">Zopakovať tento text</button>
+          <p id="stavUlozenia" class="stav-ulozenia"></p>
+        </div>
+
+        <!-- Nápoveda: ktorý kláves stlačiť a ktorým prstom -->
+        <p id="napoveda" class="napoveda"></p>
+
+        <!-- Klávesnica na obrazovke, vykreslí ju klavesnica.js -->
+        <div id="klavesnica" class="klavesnica"></div>
+
+        <div class="legenda">
+          <span class="prst-m">malíček</span>
+          <span class="prst-p">prstenník</span>
+          <span class="prst-s">prostredník</span>
+          <span class="prst-u">ukazovák</span>
+          <span class="prst-a">palec</span>
+        </div>
+      </section>
+
+      <!-- ===== Obrazovka: knižnica (riadi kniznica.js) ===== -->
+      <section id="obrazovka-kniznica" class="skryty">
+        <h1>Príbehy</h1>
+        <p class="navod">Vyber si knihu a píš ju kapitolu po kapitole.</p>
+        <div id="policaKnih" class="polica-knih"></div>
+        <p id="ziadneKnihy" class="navod skryty">Zatiaľ tu nie sú žiadne knihy. Keď ich učiteľ pridá, objavia sa tu.</p>
+      </section>
+
+      <!-- ===== Obrazovka: jedna kniha a jej kapitoly ===== -->
+      <section id="obrazovka-kniha" class="skryty">
+        <button id="spatNaKnihy" class="druhotne">← Všetky knihy</button>
+        <div class="hlavicka-knihy">
+          <div id="obalkaKnihy" class="obalka velka"></div>
+          <div>
+            <h1 id="nazovKnihy"></h1>
+            <p id="autorKnihy" class="navod"></p>
+            <div class="pruh velky"><div id="pruhKnihy"></div></div>
+            <p id="postupKnihy" class="navod"></p>
+          </div>
+        </div>
+        <p id="chybaKapitoly" class="chyba-text"></p>
+        <ol id="zoznamKapitol" class="zoznam-kapitol"></ol>
+      </section>
+
+      <!-- ===== Obrazovka: moje výsledky (vykreslí ich vysledky.js) ===== -->
+      <section id="obrazovka-vysledky" class="skryty">
+        <section class="moje-vysledky">
+          <h2>Moje výsledky</h2>
+          <p id="ziadneVysledky" class="navod">Zatiaľ tu nič nie je. Dopíš prvý text a výsledok sa uloží sem.</p>
+
+          <div id="prehlad" class="vysledok-cisla skryty">
+            <div><strong id="rekord"></strong><span>osobný rekord (slov/min)</span></div>
+            <div><strong id="priemer"></strong><span>priemer posledných 10</span></div>
+            <div><strong id="priemernaPresnost"></strong><span>% priemerná presnosť</span></div>
+            <div><strong id="pocet"></strong><span>dopísaných textov</span></div>
+          </div>
+
+          <!-- Graf rýchlosti alebo presnosti, nakreslí ho graf.js -->
+          <div id="grafKontajner" class="skryty">
+            <div class="prepinac">
+              <button data-zobrazenie="rychlost" class="aktivny">Rýchlosť</button>
+              <button data-zobrazenie="presnost">Presnosť</button>
+            </div>
+            <div class="graf">
+              <canvas id="graf"></canvas>
+            </div>
+          </div>
+
+          <!-- Mapa chýb na klávesnici, vykreslí ju chyby.js -->
+          <div id="chybyKontajner" class="skryty">
+            <h3>Problémové klávesy</h3>
+            <p class="navod">Čím červenejší kláves, tým častejšie sa na ňom mýliš. Prejdi myšou nad kláves pre podrobnosti.</p>
+            <div id="mapaChyb" class="klavesnica mala"></div>
+            <p id="problemoveZnaky" class="problemove"></p>
+          </div>
+
+          <table id="tabulka" class="skryty">
+            <thead>
+              <tr><th>Kedy</th><th>Text</th><th>Slov/min</th><th>Presnosť</th><th>Chyby</th><th>Čas</th></tr>
+            </thead>
+            <tbody id="riadky"></tbody>
+          </table>
+        </section>
+      </section>
+    </main>
+  </div>
 
   <!-- Poradie je dôležité: script.js používa veci z ostatných súborov -->
   <script src="chart.umd.min.js"></script> <!-- knižnica na grafy (Chart.js) -->
@@ -136,7 +173,8 @@
   <script src="graf.js"></script>
   <script src="chyby.js"></script>
   <script src="script.js"></script>
-  <script src="pribehy.js"></script>          <!-- úryvky, náhodné texty a príbehy -->
+  <script src="pribehy.js"></script>          <!-- úryvky a náhodné texty -->
+  <script src="kniznica.js"></script>         <!-- menu, knižnica, kapitoly -->
   <script src="ziak.js"></script>             <!-- prihlásenie žiaka, spúšťa aplikáciu -->
 </body>
 </html>

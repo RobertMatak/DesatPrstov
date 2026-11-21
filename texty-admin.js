@@ -107,14 +107,13 @@ $("pridatText").addEventListener("click", () => {
     const jedenRiadok = (id) => $(id).value.trim().replace(/\s+/g, " ") || null; // prázdne → null
     const { error } = await db.from("texty").insert({
       text,
-      nazov: jedenRiadok("nazovTextu"),
       autor: jedenRiadok("autorTextu"),
       zdroj: jedenRiadok("zdrojTextu"),
       trieda_id: preVsetky ? null : vybranaTrieda.id,
     });
     if (error) return ukazHlasku(popisChyby(error), true);
 
-    for (const id of ["novyText", "nazovTextu", "autorTextu", "zdrojTextu"]) $(id).value = "";
+    for (const id of ["novyText", "autorTextu", "zdrojTextu"]) $(id).value = "";
     ukazHlasku(preVsetky ? "Text bol pridaný pre všetky tvoje triedy." : `Text bol pridaný pre triedu ${vybranaTrieda.nazov}.`);
     await nacitajTexty();
   });

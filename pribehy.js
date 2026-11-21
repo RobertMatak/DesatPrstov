@@ -1,26 +1,19 @@
-// ===== Úryvky, náhodné texty a príbehy na pokračovanie =====
-// Žiak si vyberie režim:
-//   - Náhodné texty: náhodný úryvok z textov od učiteľa aj zo vstavaných (texty.js)
-//   - Príbeh: vybraný text od učiteľa píše postupne, úryvok za úryvkom
+// ===== Úryvky a náhodné texty =====
 // Dĺžka úryvku (počet slov) závisí od ročníka triedy a nastavuje ju učiteľ.
 // Úryvok končí, ak sa dá, na konci vety, inak aspoň za čiarkou.
-
-const KLUC_REZIM = "desatPrstov.rezim";
-const KLUC_PRIBEH = "desatPrstov.pribeh";
+// Náhodné texty = texty od učiteľa (záložka Náhodné texty) + vstavané (texty.js).
+// Knihy sa sem nedostanú, tie sú len v časti Príbehy (kniznica.js).
 
 let textyOdUcitela = [];  // [{ id, nazov, text, autor, zdroj }] pre triedu žiaka (zo servera)
 let slovNaUryvok = 20;    // dĺžka úryvku pre ročník žiaka (zo servera)
-let postupPribehov = {};  // id príbehu → od ktorého slova pokračovať
-let rezim = "nahodne";    // "nahodne" alebo "pribeh"
-let idPribehu = null;     // vybraný príbeh
-let aktualnyUryvok = null; // pri príbehu: { textId, od, koniec, pocet }
+let aktualnyUryvok = null; // pri kapitole: { textId, od, koniec, pocet }
 
 // ----- Delenie textu na úryvky -----
 const KONIEC_VETY = /[.!?]["')]*$/;   // slovo končí bodkou, otáznikom alebo výkričníkom
 const KONIEC_CASTI = /[,;:]["')]*$/;  // slovo končí čiarkou, bodkočiarkou alebo dvojbodkou
 
 function slovaTextu(text) {
-  return text.split(" ").filter((s) => s.length > 0);
+  return text.split(/\s+/).filter((s) => s.length > 0);
 }
 
 // Nájde, kde má skončiť úryvok, ktorý začína slovom "od" a má mať asi "ciel" slov.
@@ -63,39 +56,6 @@ function zaciatkyViet(slova) {
   return zaciatky;
 }
 
-// ----- Údaje zo servera -----
-// ajPostup = true len pri prihlásení; neskôr obnovujeme iba texty a dĺžku,
-// aby sme neprepísali postup, ktorý sa práve ukladá.
-async function nacitajUdajeZiaka(ajPostup) {
-  const { data, error } = await db.rpc("udaje_pre_ziaka", { p_kod: kodZiaka }); // kodZiaka je v ziak.js
-  if (!error && data) {
-    textyOdUcitela = data.texty;
-    slovNaUryvok = data.slov;
-    if (ajPostup) postupPribehov = data.postup;
-  } else if (error) {
-    // Databáza ešte bez úpravy z fázy 6: aspoň texty po starom, bez príbehov
-    const stare = await db.rpc("texty_pre_ziaka", { p_kod: kodZiaka });
-    if (!stare.error && Array.isArray(stare.data)) {
-      textyOdUcitela = stare.data.map((text) => ({ id: null, nazov: null, text }));
-    }
-  }
-  vykresliVolbyRezimu();
-}
-
-async function ulozPostup(textId, pozicia) {
-  // Keď sa nepodarí (napr. bez internetu), postup sa uloží pri ďalšom úryvku
-  await db.rpc("uloz_postup", { p_kod: kodZiaka, p_text_id: textId, p_pozicia: pozicia });
-}
-
-// ----- Príbehy a ich popis -----
-function pribehy() {
-  return textyOdUcitela.filter((t) => t.id); // len texty z databázy s id
-}
-
-function nazovPribehu(t) {
-  return t.nazov || slovaTextu(t.text).slice(0, 4).join(" ") + "…";
-}
-
 // "Zdroj: Pavol Dobšinský – Soľ nad zlato (Prostonárodné slovenské povesti)"
 function popisZdroja(t) {
   if (t.vstavany) return "Zdroj: texty aplikácie Desať Prstov";
@@ -105,129 +65,58 @@ function popisZdroja(t) {
   return ""; // učiteľ zdroj neuviedol
 }
 
-function percentaPribehu(t) {
-  const pocet = slovaTextu(t.text).length;
-  return Math.min(100, Math.round(((postupPribehov[t.id] || 0) / pocet) * 100));
-}
-
-// ----- Výber režimu a príbehu -----
-function nacitajVolbyRezimu() {
-  try {
-    rezim = localStorage.getItem(KLUC_REZIM) || "nahodne";
-    idPribehu = localStorage.getItem(KLUC_PRIBEH);
-  } catch (chyba) {}
-}
-
-function ulozVolbyRezimu() {
-  try {
-    localStorage.setItem(KLUC_REZIM, rezim);
-    if (idPribehu) localStorage.setItem(KLUC_PRIBEH, idPribehu);
-  } catch (chyba) {}
-}
-
-function vykresliVolbyRezimu() {
-  for (const b of document.querySelectorAll("#prepinacRezimu button")) {
-    b.classList.toggle("aktivny", b.dataset.rezim === rezim);
-  }
-
-  const zoznam = pribehy();
-  if (!zoznam.some((p) => p.id === idPribehu)) idPribehu = zoznam.length > 0 ? zoznam[0].id : null;
-
-  const vyber = document.getElementById("vyberPribehu");
-  const info = document.getElementById("infoPribehu");
-  vyber.classList.toggle("skryty", rezim !== "pribeh" || zoznam.length === 0);
-  vyber.innerHTML = "";
-  for (const p of zoznam) {
-    const moznost = document.createElement("option");
-    moznost.value = p.id;
-    moznost.textContent = `${nazovPribehu(p)} (${percentaPribehu(p)} %)`;
-    vyber.appendChild(moznost);
-  }
-  if (idPribehu) vyber.value = idPribehu;
-
-  if (rezim === "pribeh" && zoznam.length === 0) {
-    info.textContent = "Zatiaľ tu nie sú žiadne príbehy, píšeš náhodné texty.";
-  } else {
-    info.textContent = `Úryvky po približne ${slovNaUryvok} slovách`;
+// ----- Údaje zo servera -----
+// ajPostup = true len pri prihlásení; neskôr obnovujeme iba texty, knihy a dĺžku,
+// aby sme neprepísali postup, ktorý sa práve ukladá.
+async function nacitajUdajeZiaka(ajPostup) {
+  const { data, error } = await db.rpc("udaje_pre_ziaka", { p_kod: kodZiaka }); // kodZiaka je v ziak.js
+  if (!error && data) {
+    textyOdUcitela = data.texty;
+    slovNaUryvok = data.slov;
+    nastavKnihy(data.knihy || [], ajPostup ? data.postup : null); // kniznica.js
+  } else if (error) {
+    // Databáza ešte bez novších úprav: aspoň náhodné texty po starom
+    const stare = await db.rpc("texty_pre_ziaka", { p_kod: kodZiaka });
+    if (!stare.error && Array.isArray(stare.data)) {
+      textyOdUcitela = stare.data.map((text) => ({ id: null, nazov: null, text }));
+    }
   }
 }
 
-for (const b of document.querySelectorAll("#prepinacRezimu button")) {
-  b.addEventListener("click", () => {
-    rezim = b.dataset.rezim;
-    ulozVolbyRezimu();
-    vykresliVolbyRezimu();
-    dalsiText();
-  });
-}
-
-document.getElementById("vyberPribehu").addEventListener("change", (udalost) => {
-  idPribehu = udalost.target.value;
-  ulozVolbyRezimu();
-  dalsiText();
-});
-
-// ----- Výber ďalšieho textu (tlačidlo „Ďalší text“, Enter, zmena režimu) -----
+// ----- Ďalší text (tlačidlo „Ďalší text“, Enter) -----
 function dalsiText() {
-  const pribeh = rezim === "pribeh" ? pribehy().find((p) => p.id === idPribehu) : null;
+  document.getElementById("spravaKapitoly").textContent = "";
+  document.getElementById("dalsi").textContent = "Ďalší text (Enter)";
 
-  if (pribeh) {
-    // Príbeh: pokračujeme tam, kde žiak skončil
-    const slova = slovaTextu(pribeh.text);
-    let od = postupPribehov[pribeh.id] || 0;
-    if (od >= slova.length) {
-      od = 0; // dopísaný príbeh sa začne odznova
-      postupPribehov[pribeh.id] = 0;
-    }
-    const koniec = koniecUryvku(slova, od, slovNaUryvok);
-    aktualnyUryvok = { textId: pribeh.id, od, koniec, pocet: slova.length };
-    aktualnyText = slova.slice(od, koniec).join(" "); // script.js
-    document.getElementById("zdrojTextu").textContent = popisZdroja(pribeh);
-  } else {
-    // Náhodné texty: náhodný začiatok vety v náhodnom texte
-    // (dlhší text má viac viet, a tak aj väčšiu šancu)
-    const texty = textyOdUcitela.concat(TEXTY.map((text) => ({ text, vstavany: true })));
-    const moznosti = [];
-    texty.forEach((t, i) => {
-      const slova = slovaTextu(t.text);
-      for (const z of zaciatkyViet(slova)) {
-        if (z === 0 || slova.length - z >= slovNaUryvok * 0.7) moznosti.push([i, z]);
-      }
-    });
+  if (aktualnaKapitola) return dalsiUryvokKapitoly(); // kniznica.js
 
-    let novy = aktualnyText;
-    let zdrojovyText = null;
-    for (let pokus = 0; pokus < 10 && novy === aktualnyText; pokus++) {
-      const [i, od] = moznosti[Math.floor(Math.random() * moznosti.length)];
-      zdrojovyText = texty[i];
-      const slova = slovaTextu(zdrojovyText.text);
-      novy = slova.slice(od, koniecUryvku(slova, od, slovNaUryvok)).join(" ");
+  // Náhodné texty: náhodný začiatok vety v náhodnom texte
+  // (dlhší text má viac viet, a tak aj väčšiu šancu)
+  const texty = textyOdUcitela.concat(TEXTY.map((text) => ({ text, vstavany: true })));
+  const moznosti = [];
+  texty.forEach((t, i) => {
+    const slova = slovaTextu(t.text);
+    for (const z of zaciatkyViet(slova)) {
+      if (z === 0 || slova.length - z >= slovNaUryvok * 0.7) moznosti.push([i, z]);
     }
-    aktualnyUryvok = null;
-    aktualnyText = novy;
-    document.getElementById("zdrojTextu").textContent = zdrojovyText ? popisZdroja(zdrojovyText) : "";
+  });
+
+  let novy = aktualnyText;
+  let zdrojovyText = null;
+  for (let pokus = 0; pokus < 10 && novy === aktualnyText; pokus++) {
+    const [i, od] = moznosti[Math.floor(Math.random() * moznosti.length)];
+    zdrojovyText = texty[i];
+    const slova = slovaTextu(zdrojovyText.text);
+    novy = slova.slice(od, koniecUryvku(slova, od, slovNaUryvok)).join(" ");
   }
+  aktualnyUryvok = null;
+  aktualnyText = novy; // script.js
+
+  nastavHlavickuPisania(
+    "Náhodné texty",
+    `Úryvky po približne ${slovNaUryvok} slovách. Klikni na text a začni písať, chybu opravíš klávesom Backspace.`,
+    false
+  ); // kniznica.js
+  document.getElementById("zdrojTextu").textContent = zdrojovyText ? popisZdroja(zdrojovyText) : "";
   zacniCvicenie(); // script.js
-}
-
-// ----- Po dopísaní úryvku (volá script.js) -----
-function poDopisaniUryvku() {
-  const sprava = document.getElementById("spravaPribehu");
-  sprava.textContent = "";
-
-  if (aktualnyUryvok) {
-    const u = aktualnyUryvok;
-    const pribeh = pribehy().find((p) => p.id === u.textId);
-    if (u.koniec > (postupPribehov[u.textId] || 0)) { // pri „Zopakovať“ sa postup nemení
-      postupPribehov[u.textId] = u.koniec;
-      ulozPostup(u.textId, u.koniec);
-    }
-    if (pribeh) {
-      sprava.textContent = u.koniec >= u.pocet
-        ? `🎉 Príbeh „${nazovPribehu(pribeh)}“ je celý dopísaný! Ďalší text ho začne odznova, alebo si vyber iný.`
-        : `Príbeh „${nazovPribehu(pribeh)}“: dopísané ${percentaPribehu(pribeh)} %.`;
-    }
-  }
-  vykresliVolbyRezimu();
-  nacitajUdajeZiaka(false); // ak učiteľ medzitým pridal text alebo zmenil dĺžku
 }
