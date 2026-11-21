@@ -4,7 +4,7 @@
 // Pravidlá v databáze zaručujú, že učiteľ vidí a mení len svoje texty.
 
 const MIN_DLZKA_TEXTU = 20;    // kratší text nemá na precvičovanie zmysel
-const MAX_DLZKA_TEXTU = 1500;  // dlhší by sa písal príliš dlho
+const MAX_DLZKA_TEXTU = 20000; // celá rozprávka; žiaci ho dostávajú po úryvkoch
 
 let textyTriedy = []; // texty, ktoré vidí vybraná trieda
 
@@ -27,11 +27,15 @@ function nepodporovaneZnaky(text) {
   return [...new Set(zle)]; // Set odstráni duplikáty, ako set() v Pythone
 }
 
+// Počet slov v texte
+const pocetSlov = (text) => text.split(" ").filter((s) => s.length > 0).length;
+
 async function nacitajTexty() {
   $("nazovTriedyTexty").textContent = vybranaTrieda.nazov;
+  $("dlzkaPreTriedu").textContent = popisDlzkyTriedy(); // dlzky-admin.js
 
   // Všetky texty učiteľa; pre túto triedu vyberieme jej vlastné a tie „pre všetky“
-  const { data, error } = await db.from("texty").select("id, trieda_id, text, vytvorene").order("vytvorene");
+  const { data, error } = await db.from("texty").select("id, trieda_id, nazov, text, vytvorene").order("vytvorene");
   if (error) return ukazHlasku(popisChyby(error), true);
 
   textyTriedy = data.filter((t) => t.trieda_id === null || t.trieda_id === vybranaTrieda.id);
@@ -49,8 +53,15 @@ function vykresliTexty() {
 
     const nahlad = document.createElement("span");
     nahlad.className = "nahlad";
-    nahlad.textContent = t.text.length > 110 ? t.text.slice(0, 110) + "…" : t.text;
-    nahlad.title = t.text; // celý text po prejdení myšou
+    if (t.nazov) {
+      const nazov = document.createElement("span");
+      nazov.className = "nazov-textu";
+      nazov.textContent = t.nazov;
+      nahlad.appendChild(nazov);
+    }
+    const ukazka = t.text.length > 90 ? t.text.slice(0, 90) + "…" : t.text;
+    nahlad.appendChild(document.createTextNode(`${ukazka} (${pocetSlov(t.text)} slov)`));
+    nahlad.title = t.text.slice(0, 1000); // začiatok textu po prejdení myšou
 
     const znacka = document.createElement("span");
     znacka.className = "znacka" + (t.trieda_id === null ? " vsetky" : "");
@@ -80,13 +91,16 @@ $("pridatText").addEventListener("click", () => {
     }
 
     const preVsetky = document.querySelector("input[name=komuText]:checked").value === "vsetky";
+    const nazov = $("nazovTextu").value.trim().replace(/\s+/g, " ");
     const { error } = await db.from("texty").insert({
       text,
+      nazov: nazov || null, // prázdny názov neukladáme
       trieda_id: preVsetky ? null : vybranaTrieda.id,
     });
     if (error) return ukazHlasku(popisChyby(error), true);
 
     $("novyText").value = "";
+    $("nazovTextu").value = "";
     ukazHlasku(preVsetky ? "Text bol pridaný pre všetky tvoje triedy." : `Text bol pridaný pre triedu ${vybranaTrieda.nazov}.`);
     await nacitajTexty();
   });
@@ -96,7 +110,8 @@ async function zmazText(t) {
   const upozornenie = t.trieda_id === null
     ? "Tento text je pre VŠETKY tvoje triedy, zmizne zo všetkých."
     : `Text zmizne z triedy ${vybranaTrieda.nazov}.`;
-  if (!confirm(`Zmazať text „${t.text.slice(0, 60)}…“?\n${upozornenie}\nVýsledky žiakov ostanú.`)) return;
+  const popis = t.nazov || t.text.slice(0, 60) + "…";
+  if (!confirm(`Zmazať text „${popis}“?\n${upozornenie}\nVýsledky žiakov ostanú, ich postup v tomto príbehu sa zmaže.`)) return;
 
   const { error } = await db.from("texty").delete().eq("id", t.id);
   if (error) return ukazHlasku(popisChyby(error), true);

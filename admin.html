@@ -38,16 +38,38 @@
     <p id="hlaska" class="hlaska skryty"></p>
 
     <main class="rozlozenie">
-      <!-- Ľavý stĺpec: triedy -->
-      <section class="karta">
-        <h2>Triedy</h2>
-        <ul id="zoznamTried" class="zoznam-tried"></ul>
-        <p id="ziadneTriedy" class="sivy skryty">Zatiaľ nemáš žiadnu triedu.</p>
-        <form id="novaTriedaForm" class="riadok">
-          <input id="novaTrieda" placeholder="Napr. 5.A" maxlength="50" required>
-          <button type="submit">Pridať</button>
-        </form>
-      </section>
+      <!-- Ľavý stĺpec: triedy a dĺžky úryvkov -->
+      <div class="lavy-stlpec">
+        <section class="karta">
+          <h2>Triedy</h2>
+          <ul id="zoznamTried" class="zoznam-tried"></ul>
+          <p id="ziadneTriedy" class="sivy skryty">Zatiaľ nemáš žiadnu triedu.</p>
+          <form id="novaTriedaForm" class="riadok">
+            <select id="novyRocnik" required>
+              <option value="" disabled selected>Ročník</option>
+            <option value="1">1.</option>
+            <option value="2">2.</option>
+            <option value="3">3.</option>
+            <option value="4">4.</option>
+            <option value="5">5.</option>
+            <option value="6">6.</option>
+            <option value="7">7.</option>
+            <option value="8">8.</option>
+            <option value="9">9.</option>
+            </select>
+            <input id="novePismeno" placeholder="A" title="Písmeno triedy" maxlength="3" required>
+            <button type="submit">Pridať</button>
+          </form>
+        </section>
+
+        <!-- Dĺžky úryvkov podľa ročníkov (riadi dlzky-admin.js) -->
+        <section class="karta">
+          <h2>Dĺžka úryvkov</h2>
+          <p class="sivy">Približný počet slov, ktorý žiak napíše naraz. Platí pre všetky triedy ročníka.</p>
+          <div id="dlzkyRocnikov" class="dlzky-mriezka"></div>
+          <button id="ulozitDlzky">Uložiť dĺžky</button>
+        </section>
+      </div>
 
       <!-- Pravý stĺpec: vybraná trieda -->
       <section class="karta">
@@ -58,7 +80,7 @@
             <h2 id="nazovTriedy"></h2>
             <div>
               <button id="tlacitKarticky">Vytlačiť kartičky</button>
-              <button id="premenovatTriedu" class="druhotne">Premenovať</button>
+              <button id="premenovatTriedu" class="druhotne">Zmeniť ročník/písmeno</button>
               <button id="zmazatTriedu" class="nebezpecne">Zmazať triedu</button>
             </div>
           </div>
@@ -147,8 +169,9 @@
 
           <!-- ===== Záložka Texty (riadi texty-admin.js) ===== -->
           <div id="zalozka-texty" class="skryty">
-            <p class="sivy">Žiaci pri „Ďalší text“ dostávajú tvoje texty aj 10 vstavaných. Texty vidia len prihlásení žiaci tvojich tried.</p>
-            <textarea id="novyText" rows="5" placeholder="Sem vlož alebo napíš text (20 až 1500 znakov)…"></textarea>
+            <p class="sivy">Text môže byť aj celý príbeh. Žiaci ho dostávajú po úryvkoch: v režime <b>Príbeh</b> postupne od začiatku, v režime <b>Náhodné texty</b> náhodné úryvky z tvojich aj 10 vstavaných textov. <span id="dlzkaPreTriedu"></span></p>
+            <input id="nazovTextu" class="cela-sirka" placeholder="Názov príbehu (napr. Soľ nad zlato), nepovinné" maxlength="100">
+            <textarea id="novyText" rows="8" placeholder="Sem vlož alebo napíš text, pokojne aj celý príbeh (do 20 000 znakov)…"></textarea>
             <div class="volby-textu">
               <label><input type="radio" name="komuText" value="trieda" checked> len pre triedu <span id="nazovTriedyTexty"></span></label>
               <label><input type="radio" name="komuText" value="vsetky"> pre všetky moje triedy</label>
@@ -180,5 +203,6 @@
   <script src="admin.js"></script>
   <script src="vysledky-admin.js"></script>
   <script src="texty-admin.js"></script>
+  <script src="dlzky-admin.js"></script>
 </body>
 </html>

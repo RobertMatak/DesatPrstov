@@ -372,3 +372,34 @@ tr.rekord-riadok td {
 
 .stav-ulozenia.ok { color: #2a8a3e; }
 .stav-ulozenia.chyba { color: #d9443b; }
+
+/* ===== Režim: náhodné texty / príbeh ===== */
+.volba-rezimu {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.volba-rezimu .prepinac { margin-bottom: 0; }
+
+#vyberPribehu {
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  max-width: 320px;
+}
+
+.info-pribehu {
+  color: #777;
+  font-size: 14px;
+}
+
+.sprava-pribehu {
+  margin: 6px 0 0;
+  font-weight: bold;
+}

@@ -7,8 +7,7 @@ const vysledokEl = document.getElementById("vysledok");
 
 // ===== Stav cvičenia =====
 let ZNAKY = [];        // znaky aktuálneho textu
-let aktualnyText = ""; // text, ktorý práve píšeme
-let textyOdUcitela = []; // texty pre triedu žiaka z databázy (načíta ziak.js)
+let aktualnyText = ""; // text (úryvok), ktorý práve píšeme; vyberá ho pribehy.js
 let pozicia = 0;       // index znaku, ktorý treba práve napísať
 let pocetUhozov = 0;   // koľko znakov používateľ napísal (aj chybných)
 let pocetChyb = 0;     // koľko z nich bolo chybných
@@ -17,19 +16,6 @@ let koniecCas = null;  // čas dopísania
 let hotovo = false;
 let mrtvyKlavesStlaceny = false; // stlačil už ´ alebo ˇ a čaká sa na písmeno?
 
-// Texty, z ktorých sa vyberá: od učiteľa + vstavané (texty.js)
-function dostupneTexty() {
-  return textyOdUcitela.concat(TEXTY);
-}
-
-// Vyberie náhodný text, ale nie ten istý ako minule
-function nahodnyText() {
-  const zoznam = dostupneTexty();
-  let moznosti = zoznam.filter((t) => t !== aktualnyText);
-  if (moznosti.length === 0) moznosti = zoznam; // keby bol len jeden text
-  aktualnyText = moznosti[Math.floor(Math.random() * moznosti.length)];
-  zacniCvicenie();
-}
 
 // Začne písať aktuálny text od začiatku
 function zacniCvicenie() {
@@ -144,7 +130,7 @@ function koniec() {
     }, klavesy);
     vykresliVysledky();
   }
-  obnovTextyOdUcitela(); // ziak.js: ak učiteľ medzitým pridal text, pri ďalšom už môže prísť
+  poDopisaniUryvku(); // pribehy.js: postup v príbehu a obnovenie textov od učiteľa
 
   vysledokEl.classList.remove("skryty");
 }
@@ -214,7 +200,7 @@ vstup.addEventListener("keydown", (udalost) => {
     vratSpat();
     aktualizujStaty();
   } else if (udalost.key === "Enter" && hotovo) {
-    nahodnyText();
+    dalsiText();
   }
 });
 vstup.addEventListener("keyup", (udalost) => pustiKlaves(udalost.code));
@@ -222,7 +208,7 @@ vstup.addEventListener("keyup", (udalost) => pustiKlaves(udalost.code));
 // ===== Focus: kliknutie kamkoľvek vráti písanie do políčka =====
 // (okrem kliknutia do políčok a na tlačidlá, napr. pri prihlasovaní)
 document.addEventListener("click", (udalost) => {
-  if (udalost.target.closest("input, textarea, button, label")) return;
+  if (udalost.target.closest("input, textarea, button, label, select")) return;
   if (document.getElementById("aplikacia").classList.contains("skryty")) return;
   vstup.focus();
 });
@@ -233,7 +219,7 @@ vstup.addEventListener("blur", () => {
 vstup.addEventListener("focus", () => document.body.classList.remove("neaktivny"));
 
 // ===== Tlačidlá =====
-document.getElementById("dalsi").addEventListener("click", nahodnyText);
+document.getElementById("dalsi").addEventListener("click", () => dalsiText()); // dalsiText je v pribehy.js
 document.getElementById("zopakovat").addEventListener("click", zacniCvicenie);
 
 // ===== Štart =====
@@ -241,5 +227,5 @@ document.getElementById("zopakovat").addEventListener("click", zacniCvicenie);
 function spustiAplikaciu() {
   vykresliKlavesnicu(klavesnicaEl);
   vykresliVysledky();
-  nahodnyText();
+  dalsiText();
 }

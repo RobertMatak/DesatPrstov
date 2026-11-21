@@ -61,6 +61,7 @@ async function zobrazPodlaPrihlasenia() {
 
   if (prihlaseny) {
     $("kto").textContent = data.session.user.email;
+    await nacitajDlzky(); // dlzky-admin.js
     await nacitajTriedy();
   }
 }
@@ -95,10 +96,12 @@ $("odhlasit").addEventListener("click", async () => {
 // ===== Triedy =====
 async function nacitajTriedy() {
   // "ziaci(count)" pridá ku každej triede počet jej žiakov
-  const { data, error } = await db.from("triedy").select("id, nazov, ziaci(count)");
+  const { data, error } = await db.from("triedy").select("id, nazov, rocnik, pismeno, ziaci(count)");
   if (error) return ukazHlasku(popisChyby(error), true);
 
-  triedy = data.sort((a, b) => podlaAbecedy(a.nazov, b.nazov));
+  // Radenie podľa ročníka, potom písmena; triedy bez ročníka na koniec
+  triedy = data.sort((a, b) =>
+    (a.rocnik ?? 99) - (b.rocnik ?? 99) || podlaAbecedy(a.nazov, b.nazov));
 
   // Ak bola vybraná trieda zmazaná, zrušíme výber
   if (vybranaTrieda) {
@@ -119,6 +122,13 @@ function vykresliTriedy() {
 
     const nazov = document.createElement("span");
     nazov.textContent = trieda.nazov;
+    if (trieda.rocnik === null) {
+      // Stará trieda, z ktorej názvu sa ročník nedal zistiť
+      const upozornenie = document.createElement("span");
+      upozornenie.className = "upozornenie";
+      upozornenie.textContent = " · doplň ročník";
+      nazov.appendChild(upozornenie);
+    }
     const pocet = document.createElement("span");
     pocet.className = "sivy";
     pocet.textContent = trieda.ziaci[0].count + " ž.";
@@ -133,33 +143,57 @@ function vykresliTriedy() {
   }
 }
 
+// Z ročníka a písmena poskladá údaje triedy: (5, "d") → { rocnik: 5, pismeno: "D", nazov: "5.D" }
+function udajeTriedy(rocnik, pismeno) {
+  pismeno = pismeno.trim().toUpperCase();
+  return { rocnik, pismeno, nazov: `${rocnik}.${pismeno}` };
+}
+
+// Písmeno triedy: 1 až 3 písmená bez diakritiky (A, B, AJ…)
+const jeSpravnePismeno = (p) => /^[A-Za-z]{1,3}$/.test(p.trim());
+
 $("novaTriedaForm").addEventListener("submit", (udalost) => {
   udalost.preventDefault();
   sTlacidlom(udalost.submitter, async () => {
-    const nazov = $("novaTrieda").value.trim();
-    if (!nazov) return;
-    if (triedy.some((t) => t.nazov.toLowerCase() === nazov.toLowerCase())) {
-      return ukazHlasku(`Trieda ${nazov} už existuje.`, true);
+    const rocnik = Number($("novyRocnik").value);
+    if (!rocnik) return ukazHlasku("Vyber ročník.", true);
+    if (!jeSpravnePismeno($("novePismeno").value)) {
+      return ukazHlasku("Písmeno triedy musí byť 1 až 3 písmená bez diakritiky, napr. A.", true);
+    }
+    const nova = udajeTriedy(rocnik, $("novePismeno").value);
+    if (triedy.some((t) => t.nazov === nova.nazov)) {
+      return ukazHlasku(`Trieda ${nova.nazov} už existuje.`, true);
     }
 
     // .select().single() vráti práve vytvorenú triedu (aj s jej id)
-    const { data, error } = await db.from("triedy").insert({ nazov }).select().single();
+    const { data, error } = await db.from("triedy").insert(nova).select().single();
     if (error) return ukazHlasku(popisChyby(error), true);
 
-    $("novaTrieda").value = "";
+    $("novePismeno").value = "";
     vybranaTrieda = data;
-    ukazHlasku(`Trieda ${nazov} bola vytvorená.`);
+    ukazHlasku(`Trieda ${nova.nazov} bola vytvorená.`);
     await nacitajTriedy();
   });
 });
 
 $("premenovatTriedu").addEventListener("click", async () => {
-  const novy = prompt("Nový názov triedy:", vybranaTrieda.nazov);
-  if (novy === null || !novy.trim() || novy.trim() === vybranaTrieda.nazov) return;
+  const odpoved = prompt(
+    "Zadaj ročník a písmeno triedy, napríklad 6.D:",
+    vybranaTrieda.rocnik ? vybranaTrieda.nazov : ""
+  );
+  if (odpoved === null) return;
 
-  const { error } = await db.from("triedy").update({ nazov: novy.trim() }).eq("id", vybranaTrieda.id);
+  // "6.D", "6D" aj "6 d" → ročník 6, písmeno D
+  const zhoda = odpoved.trim().match(/^([1-9])\s*\.?\s*([A-Za-z]{1,3})$/);
+  if (!zhoda) return ukazHlasku("Zadaj ročník 1 až 9 a písmeno, napríklad 6.D.", true);
+
+  const zmena = udajeTriedy(Number(zhoda[1]), zhoda[2]);
+  if (triedy.some((t) => t.nazov === zmena.nazov && t.id !== vybranaTrieda.id)) {
+    return ukazHlasku(`Trieda ${zmena.nazov} už existuje.`, true);
+  }
+  const { error } = await db.from("triedy").update(zmena).eq("id", vybranaTrieda.id);
   if (error) return ukazHlasku(popisChyby(error), true);
-  ukazHlasku("Trieda bola premenovaná.");
+  ukazHlasku(`Trieda je teraz ${zmena.nazov}.`);
   await nacitajTriedy();
 });
 

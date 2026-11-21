@@ -29,6 +29,16 @@
     <h1>Desať Prstov</h1>
     <p class="navod">Klikni na text a začni písať. Chybu opravíš klávesom Backspace.</p>
 
+    <!-- Režim: náhodné texty alebo príbeh na pokračovanie (riadi pribehy.js) -->
+    <div class="volba-rezimu">
+      <div id="prepinacRezimu" class="prepinac">
+        <button data-rezim="nahodne">Náhodné texty</button>
+        <button data-rezim="pribeh">Príbeh</button>
+      </div>
+      <select id="vyberPribehu" class="skryty"></select>
+      <span id="infoPribehu" class="info-pribehu"></span>
+    </div>
+
     <!-- Živé štatistiky počas písania -->
     <div class="staty">
       <span>Rýchlosť: <strong id="zivaRychlost">–</strong> slov/min</span>
@@ -56,6 +66,7 @@
       <button id="dalsi">Ďalší text (Enter)</button>
       <button id="zopakovat" class="druhotne">Zopakovať tento text</button>
       <p id="stavUlozenia" class="stav-ulozenia"></p>
+      <p id="spravaPribehu" class="sprava-pribehu"></p>
     </div>
 
     <!-- Nápoveda: ktorý kláves stlačiť a ktorým prstom -->
@@ -123,6 +134,7 @@
   <script src="graf.js"></script>
   <script src="chyby.js"></script>
   <script src="script.js"></script>
+  <script src="pribehy.js"></script>          <!-- úryvky, náhodné texty a príbehy -->
   <script src="ziak.js"></script>             <!-- prihlásenie žiaka, spúšťa aplikáciu -->
 </body>
 </html>
