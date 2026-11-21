@@ -39,6 +39,7 @@ async function prihlas(kod) {
   const { data: udaje, error: chybaUdajov } = await db.rpc("moje_vysledky", { p_kod: kod });
   if (chybaUdajov || udaje === null) return "Nepodarilo sa načítať tvoje výsledky. Skús to znova.";
 
+  await obnovTextyOdUcitela();
   nastavVysledky(udaje.vysledky);          // vysledky.js
   nastavStatistikuKlavesov(udaje.klavesy); // chyby.js
 
@@ -48,6 +49,13 @@ async function prihlas(kod) {
   aplikaciaEl.classList.remove("skryty");
   spustiAplikaciu(); // script.js
   return null;
+}
+
+// Načíta texty od učiteľa pre triedu žiaka.
+// Keď sa to nepodarí (napr. bez internetu), ostanú doterajšie a vstavané texty.
+async function obnovTextyOdUcitela() {
+  const { data, error } = await db.rpc("texty_pre_ziaka", { p_kod: kodZiaka });
+  if (!error && Array.isArray(data)) textyOdUcitela = data; // script.js
 }
 
 document.getElementById("prihlasenieForm").addEventListener("submit", async (udalost) => {

@@ -67,6 +67,7 @@
           <div class="prepinac zalozky">
             <button data-zalozka="vysledky" class="aktivny">Výsledky</button>
             <button data-zalozka="spravaZiakov">Žiaci a kódy</button>
+            <button data-zalozka="texty">Texty</button>
           </div>
 
           <!-- ===== Záložka Výsledky (riadi vysledky-admin.js) ===== -->
@@ -144,6 +145,21 @@
             </form>
           </div>
 
+          <!-- ===== Záložka Texty (riadi texty-admin.js) ===== -->
+          <div id="zalozka-texty" class="skryty">
+            <p class="sivy">Žiaci pri „Ďalší text“ dostávajú tvoje texty aj 10 vstavaných. Texty vidia len prihlásení žiaci tvojich tried.</p>
+            <textarea id="novyText" rows="5" placeholder="Sem vlož alebo napíš text (20 až 1500 znakov)…"></textarea>
+            <div class="volby-textu">
+              <label><input type="radio" name="komuText" value="trieda" checked> len pre triedu <span id="nazovTriedyTexty"></span></label>
+              <label><input type="radio" name="komuText" value="vsetky"> pre všetky moje triedy</label>
+            </div>
+            <button id="pridatText">Pridať text</button>
+
+            <h3>Texty pre túto triedu <span id="pocetTextov" class="sivy"></span></h3>
+            <ul id="zoznamTextov" class="zoznam-textov"></ul>
+            <p id="ziadneTexty" class="sivy skryty">Zatiaľ žiadne. Žiaci píšu len vstavané texty.</p>
+          </div>
+
           <p id="ziadniZiaci" class="sivy skryty">V triede zatiaľ nie sú žiaci. Pridáš ich v záložke Žiaci a kódy.</p>
         </div>
       </section>
@@ -163,5 +179,6 @@
   <script src="chyby.js"></script>       <!-- mapa chýb -->
   <script src="admin.js"></script>
   <script src="vysledky-admin.js"></script>
+  <script src="texty-admin.js"></script>
 </body>
 </html>

@@ -7,7 +7,8 @@ const vysledokEl = document.getElementById("vysledok");
 
 // ===== Stav cvičenia =====
 let ZNAKY = [];        // znaky aktuálneho textu
-let indexTextu = -1;   // ktorý text z TEXTY práve píšeme
+let aktualnyText = ""; // text, ktorý práve píšeme
+let textyOdUcitela = []; // texty pre triedu žiaka z databázy (načíta ziak.js)
 let pozicia = 0;       // index znaku, ktorý treba práve napísať
 let pocetUhozov = 0;   // koľko znakov používateľ napísal (aj chybných)
 let pocetChyb = 0;     // koľko z nich bolo chybných
@@ -16,19 +17,23 @@ let koniecCas = null;  // čas dopísania
 let hotovo = false;
 let mrtvyKlavesStlaceny = false; // stlačil už ´ alebo ˇ a čaká sa na písmeno?
 
+// Texty, z ktorých sa vyberá: od učiteľa + vstavané (texty.js)
+function dostupneTexty() {
+  return textyOdUcitela.concat(TEXTY);
+}
+
 // Vyberie náhodný text, ale nie ten istý ako minule
 function nahodnyText() {
-  let novy;
-  do {
-    novy = Math.floor(Math.random() * TEXTY.length);
-  } while (novy === indexTextu && TEXTY.length > 1);
-  indexTextu = novy;
+  const zoznam = dostupneTexty();
+  let moznosti = zoznam.filter((t) => t !== aktualnyText);
+  if (moznosti.length === 0) moznosti = zoznam; // keby bol len jeden text
+  aktualnyText = moznosti[Math.floor(Math.random() * moznosti.length)];
   zacniCvicenie();
 }
 
 // Začne písať aktuálny text od začiatku
 function zacniCvicenie() {
-  ZNAKY = Array.from(TEXTY[indexTextu]);
+  ZNAKY = Array.from(aktualnyText);
   pozicia = 0;
   pocetUhozov = 0;
   pocetChyb = 0;
@@ -131,7 +136,7 @@ function koniec() {
     const klavesy = ulozStatistikuKlavesov(); // chyby.js: štatistika z tohto textu
     ulozVysledok({                              // vysledky.js: do pamäte a na server
       datum: new Date().toISOString(),
-      text: TEXTY[indexTextu].split(" ").slice(0, 3).join(" ") + "…",
+      text: aktualnyText.split(" ").slice(0, 3).join(" ") + "…",
       rychlost: staty.rychlost,                 // slov za minútu
       presnost: staty.presnost,
       chyby: pocetChyb,
@@ -139,6 +144,7 @@ function koniec() {
     }, klavesy);
     vykresliVysledky();
   }
+  obnovTextyOdUcitela(); // ziak.js: ak učiteľ medzitým pridal text, pri ďalšom už môže prísť
 
   vysledokEl.classList.remove("skryty");
 }
