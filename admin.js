@@ -16,6 +16,24 @@ let triedy = [];           // triedy prihláseného učiteľa
 let vybranaTrieda = null;  // trieda, ktorej žiakov práve vidíme
 let ziaci = [];            // žiaci vybranej triedy
 
+// ===== Zapamätanie, kde učiteľ bol (aby po obnovení stránky F5 ostal na mieste) =====
+// sessionStorage je ako localStorage, ale platí len pre túto kartu prehliadača
+// a po jej zatvorení sa samo vymaže.
+function zapamataj(kluc, hodnota) {
+  try {
+    if (hodnota === null) sessionStorage.removeItem("desatPrstov.admin." + kluc);
+    else sessionStorage.setItem("desatPrstov.admin." + kluc, hodnota);
+  } catch (chyba) {}
+}
+
+function spomen(kluc) {
+  try {
+    return sessionStorage.getItem("desatPrstov.admin." + kluc);
+  } catch (chyba) {
+    return null;
+  }
+}
+
 // Porovnávanie podľa slovenskej abecedy (Č za C, Š za S…) a čísel (5.A pred 10.A)
 const podlaAbecedy = (a, b) => a.localeCompare(b, "sk", { numeric: true });
 
@@ -61,6 +79,7 @@ async function zobrazPodlaPrihlasenia() {
 
   if (prihlaseny) {
     $("kto").textContent = data.session.user.email;
+    prepniZalozku(spomen("zalozka") || "vysledky"); // záložka pred obnovením stránky
     await nacitajDlzky(); // dlzky-admin.js
     await nacitajTriedy();
   }
@@ -89,6 +108,7 @@ $("odhlasit").addEventListener("click", async () => {
   triedy = [];
   ziaci = [];
   vybranaTrieda = null;
+  for (const kluc of ["trieda", "zalozka", "ziak"]) zapamataj(kluc, null);
   await zobrazPodlaPrihlasenia();
 });
 
@@ -103,10 +123,10 @@ async function nacitajTriedy() {
   triedy = data.sort((a, b) =>
     (a.rocnik ?? 99) - (b.rocnik ?? 99) || podlaAbecedy(a.nazov, b.nazov));
 
-  // Ak bola vybraná trieda zmazaná, zrušíme výber
-  if (vybranaTrieda) {
-    vybranaTrieda = triedy.find((t) => t.id === vybranaTrieda.id) || null;
-  }
+  // Vybraná trieda: tá doterajšia, alebo zapamätaná pred obnovením stránky.
+  // Ak medzitým zmizla (bola zmazaná), výber sa zruší.
+  const idTriedy = vybranaTrieda ? vybranaTrieda.id : spomen("trieda");
+  vybranaTrieda = triedy.find((t) => t.id === idTriedy) || null;
   vykresliTriedy();
   await vykresliDetail();
 }
@@ -136,6 +156,7 @@ function vykresliTriedy() {
     li.append(nazov, pocet);
     li.addEventListener("click", async () => {
       vybranaTrieda = trieda;
+      zapamataj("trieda", trieda.id);
       vykresliTriedy();
       await vykresliDetail();
     });
@@ -171,6 +192,7 @@ $("novaTriedaForm").addEventListener("submit", (udalost) => {
 
     $("novePismeno").value = "";
     vybranaTrieda = data;
+    zapamataj("trieda", data.id);
     ukazHlasku(`Trieda ${nova.nazov} bola vytvorená.`);
     await nacitajTriedy();
   });
@@ -212,6 +234,7 @@ $("zmazatTriedu").addEventListener("click", async () => {
   if (error) return ukazHlasku(popisChyby(error), true);
   ukazHlasku(`Trieda ${vybranaTrieda.nazov} bola zmazaná.`);
   vybranaTrieda = null;
+  zapamataj("trieda", null);
   await nacitajTriedy();
 });
 
@@ -237,6 +260,7 @@ function prepniZalozku(nazov) {
   for (const z of ["vysledky", "spravaZiakov", "texty"]) {
     $("zalozka-" + z).classList.toggle("skryty", nazov !== z);
   }
+  zapamataj("zalozka", nazov);
 }
 
 for (const t of document.querySelectorAll(".zalozky button")) {
@@ -390,4 +414,7 @@ $("tlacitKarticky").addEventListener("click", () => {
 
 
 // ===== Štart =====
-zobrazPodlaPrihlasenia();
+// Spustíme až po načítaní VŠETKÝCH skriptov stránky (DOMContentLoaded).
+// Inak by prihlásený učiteľ po obnovení stránky (F5) volal funkcie
+// zo súborov, ktoré sa ešte nenačítali (napr. dlzky-admin.js).
+document.addEventListener("DOMContentLoaded", zobrazPodlaPrihlasenia);

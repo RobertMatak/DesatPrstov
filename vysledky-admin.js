@@ -31,8 +31,10 @@ async function nacitajVsetko(vytvorDotaz) {
 async function nacitajVysledkyTriedy() {
   const idZiakov = ziaci.map((z) => z.id); // ziaci sú z admin.js
 
-  // Vybraný žiak z inej triedy (alebo zmazaný) → zobrazíme celú triedu
-  if (vybranyZiak) vybranyZiak = ziaci.find((z) => z.id === vybranyZiak.id) || null;
+  // Vybraný žiak: ten doterajší, alebo zapamätaný pred obnovením stránky (admin.js).
+  // Ak je z inej triedy alebo bol zmazaný, zobrazíme celú triedu.
+  const idZiaka = vybranyZiak ? vybranyZiak.id : spomen("ziak");
+  vybranyZiak = ziaci.find((z) => z.id === idZiaka) || null;
 
   if (idZiakov.length === 0) {
     vysledkyTriedy = [];
@@ -114,6 +116,7 @@ function vykresliPrehlad() {
     }
     tr.addEventListener("click", () => {
       vybranyZiak = r.ziak;
+      zapamataj("ziak", r.ziak.id);
       vykresliPrehlad();
       vykresliAnalyzu();
     });
@@ -185,6 +188,7 @@ function vykresliAnalyzu() {
 
 $("celaTrieda").addEventListener("click", () => {
   vybranyZiak = null;
+  zapamataj("ziak", null);
   vykresliPrehlad();
   vykresliAnalyzu();
 });
