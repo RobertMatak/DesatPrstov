@@ -1,12 +1,13 @@
-// ===== Texty pre triedy (učiteľ) =====
-// Text môže byť pre jednu triedu (trieda_id = id triedy)
-// alebo pre všetky triedy učiteľa (trieda_id = null).
+// ===== Náhodné texty (učiteľ) =====
+// Text patrí vybraným ročníkom (stĺpec rocniky, napr. [3, 4] alebo [7, 8, 9]).
+// Uvidia ho všetky triedy učiteľa v týchto ročníkoch.
 // Pravidlá v databáze zaručujú, že učiteľ vidí a mení len svoje texty.
 
 const MIN_DLZKA_TEXTU = 20;    // kratší text nemá na precvičovanie zmysel
 const MAX_DLZKA_TEXTU = 20000; // celá rozprávka; žiaci ho dostávajú po úryvkoch
 
-let textyTriedy = []; // texty, ktoré vidí vybraná trieda
+let vsetkyTexty = [];  // všetky náhodné texty učiteľa
+let textyTriedy = [];  // tie, ktoré sa práve zobrazujú (pre ročník triedy alebo všetky)
 let upravovanyText = null; // text načítaný vo formulári na úpravu (null = pridávame nový)
 
 // Upraví vložený text tak, aby sa dal písať na klávesnici:
@@ -31,21 +32,67 @@ function nepodporovaneZnaky(text) {
 // Počet slov v texte
 const pocetSlov = (text) => text.split(" ").filter((s) => s.length > 0).length;
 
+// ----- Ročníky -----
+// [3, 4] → "3.–4.", [1, 3, 5, 6, 7] → "1., 3., 5.–7.", [1…9] → "všetky"
+function popisRocnikov(rocniky, pripona = "ročník") {
+  if (rocniky.length === 9) return "všetky ročníky";
+  const casti = [];
+  let od = rocniky[0];
+  for (let i = 1; i <= rocniky.length; i++) {
+    if (rocniky[i] !== rocniky[i - 1] + 1) { // koniec súvislého úseku
+      const doR = rocniky[i - 1];
+      casti.push(od === doR ? `${od}.` : `${od}.–${doR}.`);
+      od = rocniky[i];
+    }
+  }
+  return casti.join(", ") + " " + pripona;
+}
+
+function oznacRocniky(rocniky) {
+  for (const box of document.querySelectorAll("input[name=rocnikText]")) {
+    box.checked = rocniky.includes(Number(box.value));
+  }
+}
+
+function vybraneRocniky() {
+  return [...document.querySelectorAll("input[name=rocnikText]:checked")].map((b) => Number(b.value));
+}
+
+// Predvolene je zaškrtnutý ročník vybranej triedy
+function predvoleneRocniky() {
+  oznacRocniky(vybranaTrieda && vybranaTrieda.rocnik ? [vybranaTrieda.rocnik] : []);
+}
+
+// Rýchle tlačidlá 1.–4., 5.–9., všetky, žiadny
+for (const b of document.querySelectorAll(".rychle-rocniky button")) {
+  b.addEventListener("click", () => {
+    oznacRocniky(b.dataset.rocniky ? b.dataset.rocniky.split(",").map(Number) : []);
+  });
+}
+
+$("vsetkyMojeTexty").addEventListener("change", () => vykresliTexty());
+
 async function nacitajTexty() {
-  $("nazovTriedyTexty").textContent = vybranaTrieda.nazov;
   $("dlzkaPreTriedu").textContent = popisDlzkyTriedy(); // dlzky-admin.js
 
-  // Všetky texty učiteľa; pre túto triedu vyberieme jej vlastné a tie „pre všetky“
-  const { data, error } = await db.from("texty").select("id, trieda_id, nazov, autor, zdroj, text, vytvorene").order("vytvorene");
+  const { data, error } = await db.from("texty").select("id, rocniky, nazov, autor, zdroj, text, vytvorene").order("vytvorene");
   if (error) return ukazHlasku(popisChyby(error), true);
+  vsetkyTexty = data;
 
-  textyTriedy = data.filter((t) => t.trieda_id === null || t.trieda_id === vybranaTrieda.id);
-  // Upravovaný text v tejto triede nie je (napr. iná trieda) → zrušíme úpravu
-  if (upravovanyText && !textyTriedy.some((t) => t.id === upravovanyText.id)) zrusUpravuTextu();
+  // Upravovaný text medzitým zmizol → zrušíme úpravu; inak nastavíme ročník triedy
+  if (upravovanyText && !vsetkyTexty.some((t) => t.id === upravovanyText.id)) zrusUpravuTextu();
+  if (!upravovanyText) predvoleneRocniky();
   vykresliTexty();
 }
 
 function vykresliTexty() {
+  // Texty pre ročník triedy, alebo všetky (prepínač, alebo trieda bez ročníka)
+  const rocnik = vybranaTrieda.rocnik;
+  const vsetky = $("vsetkyMojeTexty").checked || !rocnik;
+  textyTriedy = vsetky ? vsetkyTexty : vsetkyTexty.filter((t) => t.rocniky.includes(rocnik));
+  $("nadpisZoznamuTextov").firstChild.textContent =
+    vsetky ? "Všetky moje náhodné texty " : `Náhodné texty pre ${rocnik}. ročník `;
+
   const zoznam = $("zoznamTextov");
   zoznam.innerHTML = "";
   $("ziadneTexty").classList.toggle("skryty", textyTriedy.length > 0);
@@ -76,8 +123,8 @@ function vykresliTexty() {
     nahlad.appendChild(zdroj);
 
     const znacka = document.createElement("span");
-    znacka.className = "znacka" + (t.trieda_id === null ? " vsetky" : "");
-    znacka.textContent = t.trieda_id === null ? "všetky triedy" : "len " + vybranaTrieda.nazov;
+    znacka.className = "znacka" + (t.rocniky.length === 9 ? " vsetky" : "");
+    znacka.textContent = popisRocnikov(t.rocniky, "roč.");
 
     li.append(
       nahlad,
@@ -95,7 +142,7 @@ function upravText(t) {
   $("novyText").value = t.text;
   $("autorTextu").value = t.autor || "";
   $("zdrojTextu").value = t.zdroj || "";
-  document.querySelector(`input[name=komuText][value=${t.trieda_id === null ? "vsetky" : "trieda"}]`).checked = true;
+  oznacRocniky(t.rocniky);
   $("pridatText").textContent = "Uložiť zmeny";
   $("zrusitUpravuTextu").classList.remove("skryty");
   vykresliTexty(); // zvýrazní upravovaný text
@@ -106,7 +153,7 @@ function upravText(t) {
 function zrusUpravuTextu() {
   upravovanyText = null;
   for (const id of ["novyText", "autorTextu", "zdrojTextu"]) $(id).value = "";
-  document.querySelector("input[name=komuText][value=trieda]").checked = true;
+  predvoleneRocniky();
   $("pridatText").textContent = "Pridať text";
   $("zrusitUpravuTextu").classList.add("skryty");
 }
@@ -130,17 +177,19 @@ $("pridatText").addEventListener("click", () => {
     if (zle.length > 0) {
       return ukazHlasku(`Tieto znaky sa nedajú napísať na slovenskej klávesnici, oprav ich: ${zle.join("  ")}`, true);
     }
-    if (textyTriedy.some((t) => t.text === text && (!upravovanyText || t.id !== upravovanyText.id))) {
-      return ukazHlasku("Tento text už trieda má.", true);
+    if (vsetkyTexty.some((t) => t.text === text && (!upravovanyText || t.id !== upravovanyText.id))) {
+      return ukazHlasku("Tento text už máš medzi náhodnými textami.", true);
     }
+    const rocniky = vybraneRocniky();
+    if (rocniky.length === 0) return ukazHlasku("Zaškrtni aspoň jeden ročník.", true);
 
-    const preVsetky = document.querySelector("input[name=komuText]:checked").value === "vsetky";
     const jedenRiadok = (id) => $(id).value.trim().replace(/\s+/g, " ") || null; // prázdne → null
     const udaje = {
       text,
       autor: jedenRiadok("autorTextu"),
       zdroj: jedenRiadok("zdrojTextu"),
-      trieda_id: preVsetky ? null : vybranaTrieda.id,
+      rocniky,
+      trieda_id: null, // o tom, kto text vidí, rozhodujú ročníky
     };
 
     if (upravovanyText) {
@@ -150,7 +199,7 @@ $("pridatText").addEventListener("click", () => {
     } else {
       const { error } = await db.from("texty").insert(udaje);
       if (error) return ukazHlasku(popisChyby(error), true);
-      ukazHlasku(preVsetky ? "Text bol pridaný pre všetky tvoje triedy." : `Text bol pridaný pre triedu ${vybranaTrieda.nazov}.`);
+      ukazHlasku(`Text bol pridaný pre ${popisRocnikov(rocniky)}.`);
     }
 
     zrusUpravuTextu();
@@ -159,9 +208,7 @@ $("pridatText").addEventListener("click", () => {
 });
 
 async function zmazText(t) {
-  const upozornenie = t.trieda_id === null
-    ? "Tento text je pre VŠETKY tvoje triedy, zmizne zo všetkých."
-    : `Text zmizne z triedy ${vybranaTrieda.nazov}.`;
+  const upozornenie = `Text zmizne pre ${popisRocnikov(t.rocniky)}, teda zo všetkých tvojich tried v ${t.rocniky.length === 1 ? "tomto ročníku" : "týchto ročníkoch"}.`;
   const popis = t.nazov || t.text.slice(0, 60) + "…";
   if (!confirm(`Zmazať text „${popis}“?\n${upozornenie}\nVýsledky žiakov ostanú.`)) return;
 

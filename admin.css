@@ -382,6 +382,33 @@ select {
 
 .zoznam-textov .nazov-textu { font-weight: bold; margin-right: 6px; }
 
+/* ===== Výber ročníkov pri náhodnom texte ===== */
+.vyber-rocnikov {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 4px 0 14px;
+}
+
+.rocniky-zaskrtnutie {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rocniky-zaskrtnutie label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #333;
+}
+
+.rychle-rocniky {
+  display: flex;
+  gap: 6px;
+}
+
 /* ===== Autor a zdroj textu ===== */
 .zdroj-polia {
   display: grid;

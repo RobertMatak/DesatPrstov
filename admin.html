@@ -176,14 +176,34 @@
               <input id="zdrojTextu" placeholder="Zdroj: kniha, vydanie alebo webová adresa" maxlength="300">
             </div>
             <textarea id="novyText" rows="8" placeholder="Sem vlož alebo napíš text (20 až 20 000 znakov)…"></textarea>
-            <div class="volby-textu">
-              <label><input type="radio" name="komuText" value="trieda" checked> len pre triedu <span id="nazovTriedyTexty"></span></label>
-              <label><input type="radio" name="komuText" value="vsetky"> pre všetky moje triedy</label>
+            <!-- Pre ktoré ročníky je text -->
+            <div class="vyber-rocnikov">
+              <span class="sivy">Pre ročníky:</span>
+              <div class="rocniky-zaskrtnutie">
+                <label><input type="checkbox" name="rocnikText" value="1"> 1.</label>
+                <label><input type="checkbox" name="rocnikText" value="2"> 2.</label>
+                <label><input type="checkbox" name="rocnikText" value="3"> 3.</label>
+                <label><input type="checkbox" name="rocnikText" value="4"> 4.</label>
+                <label><input type="checkbox" name="rocnikText" value="5"> 5.</label>
+                <label><input type="checkbox" name="rocnikText" value="6"> 6.</label>
+                <label><input type="checkbox" name="rocnikText" value="7"> 7.</label>
+                <label><input type="checkbox" name="rocnikText" value="8"> 8.</label>
+                <label><input type="checkbox" name="rocnikText" value="9"> 9.</label>
+              </div>
+              <div class="rychle-rocniky">
+                <button type="button" class="druhotne male" data-rocniky="1,2,3,4">1.–4.</button>
+                <button type="button" class="druhotne male" data-rocniky="5,6,7,8,9">5.–9.</button>
+                <button type="button" class="druhotne male" data-rocniky="1,2,3,4,5,6,7,8,9">všetky</button>
+                <button type="button" class="druhotne male" data-rocniky="">žiadny</button>
+              </div>
             </div>
             <button id="pridatText">Pridať text</button>
             <button id="zrusitUpravuTextu" class="druhotne skryty">Zrušiť úpravu</button>
 
-            <h3>Náhodné texty pre túto triedu <span id="pocetTextov" class="sivy"></span></h3>
+            <div class="nadpis-triedy">
+              <h3 id="nadpisZoznamuTextov">Náhodné texty pre túto triedu <span id="pocetTextov" class="sivy"></span></h3>
+              <label class="volba-konceptu"><input type="checkbox" id="vsetkyMojeTexty"> Zobraziť všetky moje texty</label>
+            </div>
             <ul id="zoznamTextov" class="zoznam-textov"></ul>
             <p id="ziadneTexty" class="sivy skryty">Zatiaľ žiadne. Žiaci píšu len vstavané texty.</p>
           </div>
