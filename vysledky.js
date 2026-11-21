@@ -1,48 +1,86 @@
-// ===== Ukladanie výsledkov =====
-// Výsledky ukladáme do localStorage. Je to malé úložisko v prehliadači,
-// ktoré si pamätá dáta aj po zatvorení stránky alebo vypnutí počítača.
-// Vie ukladať len text, preto zoznam výsledkov prevádzame na JSON
-// (JSON.stringify / JSON.parse robia to isté ako json.dumps / json.loads v Pythone).
+// ===== Výsledky žiaka =====
+// Výsledky sa ukladajú do databázy (Supabase) cez funkciu uloz_vysledok,
+// ktorá si overí kód žiaka. Po prihlásení sa všetky výsledky načítajú
+// do pamäte (premenná vysledkyZiaka), z nej kreslíme tabuľku a graf.
+//
+// Keď sa výsledok nepodarí odoslať (napr. vypadne internet), odložíme ho
+// v prehliadači a pošleme ho znova pri ďalšom uložení alebo prihlásení.
 
-const KLUC = "desatPrstov.vysledky"; // pod týmto menom sú výsledky uložené
 const POCET_V_TABULKE = 10;
+const KLUC_NEODOSLANE = "desatPrstov.neodoslane";
 
-// Načíta všetky uložené výsledky (najstarší je prvý)
+let vysledkyZiaka = []; // výsledky prihláseného žiaka, najstarší prvý
+
+// Vráti výsledky z pamäte (používa graf.js aj script.js)
 function nacitajVysledky() {
-  let vysledky;
-  try {
-    const ulozene = localStorage.getItem(KLUC);
-    vysledky = ulozene ? JSON.parse(ulozene) : [];
-  } catch (chyba) {
-    return []; // keby prehliadač ukladanie nepovolil, aplikácia funguje ďalej
-  }
-
-  // Staršie výsledky boli uložené v úhozoch za minútu.
-  // Prepočítame ich na slová za minútu (1 slovo = 5 úhozov).
-  for (const v of vysledky) {
-    if (v.jednotka !== "slova") {
-      v.rychlost = Math.round(v.rychlost / 5);
-      v.jednotka = "slova";
-    }
-  }
-  return vysledky;
+  return vysledkyZiaka;
 }
 
-// Pridá jeden výsledok na koniec zoznamu a uloží
-function ulozVysledok(vysledok) {
-  const vsetky = nacitajVysledky();
-  vsetky.push(vysledok);
+// Po prihlásení: nastaví výsledky načítané zo servera (volá ziak.js)
+function nastavVysledky(vysledky) {
+  vysledkyZiaka = vysledky;
+}
+
+// ----- Odloženie neodoslaných výsledkov v prehliadači -----
+function nacitajNeodoslane() {
   try {
-    localStorage.setItem(KLUC, JSON.stringify(vsetky));
+    return JSON.parse(localStorage.getItem(KLUC_NEODOSLANE)) || [];
   } catch (chyba) {
-    // ukladanie nie je dostupné, výsledok sa len neuloží
+    return [];
   }
 }
 
-function vymazVysledky() {
+function ulozNeodoslane(zoznam) {
   try {
-    localStorage.removeItem(KLUC);
+    if (zoznam.length === 0) localStorage.removeItem(KLUC_NEODOSLANE);
+    else localStorage.setItem(KLUC_NEODOSLANE, JSON.stringify(zoznam));
   } catch (chyba) {}
+}
+
+// Pošle jeden výsledok na server. Vráti true, ak sa podarilo.
+async function odosliNaServer(polozka) {
+  const v = polozka.vysledok;
+  const { error } = await db.rpc("uloz_vysledok", {
+    p_kod: polozka.kod,
+    p_text_zaciatok: v.text,
+    p_rychlost: v.rychlost,
+    p_presnost: v.presnost,
+    p_chyby: v.chyby,
+    p_sekundy: v.sekundy,
+    p_klavesy: polozka.klavesy,
+  });
+  return !error;
+}
+
+// Skúsi znova poslať všetko, čo sa predtým nepodarilo
+async function odosliNeodoslane() {
+  const zoznam = nacitajNeodoslane();
+  const zostava = [];
+  for (const polozka of zoznam) {
+    if (!(await odosliNaServer(polozka))) zostava.push(polozka);
+  }
+  ulozNeodoslane(zostava);
+}
+
+// Uloží výsledok: hneď do pamäte (aby sa prekreslil graf) a potom na server.
+// klavesy = štatistika klávesov z tohto textu (z chyby.js)
+async function ulozVysledok(vysledok, klavesy) {
+  vysledkyZiaka.push(vysledok);
+
+  const stav = document.getElementById("stavUlozenia");
+  stav.textContent = "Ukladám výsledok…";
+  stav.className = "stav-ulozenia";
+
+  const polozka = { kod: kodZiaka, vysledok, klavesy }; // kodZiaka je v ziak.js
+  if (await odosliNaServer(polozka)) {
+    stav.textContent = "✓ Výsledok je uložený.";
+    stav.classList.add("ok");
+    await odosliNeodoslane(); // keď internet znova ide, pošleme aj staršie
+  } else {
+    ulozNeodoslane([...nacitajNeodoslane(), polozka]);
+    stav.textContent = "Výsledok sa nepodarilo uložiť (skontroluj internet). Pošle sa neskôr sám.";
+    stav.classList.add("chyba");
+  }
 }
 
 // Spočíta rekord a priemery. Ak ešte nie sú výsledky, vráti null.
@@ -78,7 +116,6 @@ function vykresliVysledky() {
   document.getElementById("ziadneVysledky").classList.toggle("skryty", maVysledky);
   document.getElementById("prehlad").classList.toggle("skryty", !maVysledky);
   document.getElementById("tabulka").classList.toggle("skryty", !maVysledky);
-  document.getElementById("vymazat").classList.toggle("skryty", !maVysledky);
   if (!maVysledky) return;
 
   document.getElementById("rekord").textContent = z.rekord;
@@ -108,11 +145,3 @@ function vykresliVysledky() {
     riadky.appendChild(tr);
   }
 }
-
-document.getElementById("vymazat").addEventListener("click", () => {
-  if (confirm("Naozaj vymazať všetky uložené výsledky?")) {
-    vymazVysledky();
-    vymazStatistikuKlavesov(); // chyby.js
-    vykresliVysledky();
-  }
-});

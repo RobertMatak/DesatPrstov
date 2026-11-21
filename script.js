@@ -122,21 +122,21 @@ function koniec() {
   // Uloženie výsledku (len ak je rýchlosť číslo, nie "–")
   const rekordEl = document.getElementById("novyRekord");
   rekordEl.classList.add("skryty");
+  document.getElementById("stavUlozenia").textContent = "";
   if (typeof staty.rychlost === "number") {
     const predtym = zhrnutie(nacitajVysledky());
     if (predtym !== null && staty.rychlost > predtym.rekord) {
       rekordEl.classList.remove("skryty");
     }
-    ulozVysledok({
+    const klavesy = ulozStatistikuKlavesov(); // chyby.js: štatistika z tohto textu
+    ulozVysledok({                              // vysledky.js: do pamäte a na server
       datum: new Date().toISOString(),
       text: TEXTY[indexTextu].split(" ").slice(0, 3).join(" ") + "…",
-      rychlost: staty.rychlost,
-      jednotka: "slova", // rýchlosť je v slovách za minútu
+      rychlost: staty.rychlost,                 // slov za minútu
       presnost: staty.presnost,
       chyby: pocetChyb,
       sekundy: Math.round(staty.sekundy),
-    });
-    ulozStatistikuKlavesov(); // chyby.js
+    }, klavesy);
     vykresliVysledky();
   }
 
@@ -214,7 +214,12 @@ vstup.addEventListener("keydown", (udalost) => {
 vstup.addEventListener("keyup", (udalost) => pustiKlaves(udalost.code));
 
 // ===== Focus: kliknutie kamkoľvek vráti písanie do políčka =====
-document.addEventListener("click", () => vstup.focus());
+// (okrem kliknutia do políčok a na tlačidlá, napr. pri prihlasovaní)
+document.addEventListener("click", (udalost) => {
+  if (udalost.target.closest("input, textarea, button, label")) return;
+  if (document.getElementById("aplikacia").classList.contains("skryty")) return;
+  vstup.focus();
+});
 vstup.addEventListener("blur", () => {
   document.body.classList.add("neaktivny");
   pustiVsetkyKlavesy();
@@ -226,6 +231,9 @@ document.getElementById("dalsi").addEventListener("click", nahodnyText);
 document.getElementById("zopakovat").addEventListener("click", zacniCvicenie);
 
 // ===== Štart =====
-vykresliKlavesnicu(klavesnicaEl);
-vykresliVysledky();
-nahodnyText();
+// Aplikácia sa spustí až po prihlásení žiaka (volá ju ziak.js)
+function spustiAplikaciu() {
+  vykresliKlavesnicu(klavesnicaEl);
+  vykresliVysledky();
+  nahodnyText();
+}

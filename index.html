@@ -7,7 +7,25 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
+  <!-- ===== Prihlásenie žiaka kódom (riadi ziak.js) ===== -->
+  <section id="prihlasenieZiaka" class="prihlasenie-ziaka skryty">
+    <h1>Desať Prstov</h1>
+    <p class="navod">Zadaj svoj kód z kartičky.</p>
+    <form id="prihlasenieForm">
+      <input id="kodZiaka" class="pole-kod" placeholder="ABCD-EFGH" maxlength="12"
+             autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+      <button type="submit">Prihlásiť sa</button>
+    </form>
+    <p id="prihlasenieChyba" class="chyba-text"></p>
+  </section>
+
+  <main id="aplikacia" class="skryty">
+    <!-- Kto je prihlásený -->
+    <div class="ziak-lista">
+      <span><strong id="menoZiaka"></strong> · <span id="triedaZiaka"></span></span>
+      <button id="odhlasitZiaka" class="druhotne">Odhlásiť</button>
+    </div>
+
     <h1>Desať Prstov</h1>
     <p class="navod">Klikni na text a začni písať. Chybu opravíš klávesom Backspace.</p>
 
@@ -37,6 +55,7 @@
       </div>
       <button id="dalsi">Ďalší text (Enter)</button>
       <button id="zopakovat" class="druhotne">Zopakovať tento text</button>
+      <p id="stavUlozenia" class="stav-ulozenia"></p>
     </div>
 
     <!-- Nápoveda: ktorý kláves stlačiť a ktorým prstom -->
@@ -91,17 +110,19 @@
         <tbody id="riadky"></tbody>
       </table>
 
-      <button id="vymazat" class="druhotne skryty">Vymazať výsledky</button>
     </section>
   </main>
 
   <!-- Poradie je dôležité: script.js používa veci z ostatných súborov -->
   <script src="chart.umd.min.js"></script> <!-- knižnica na grafy (Chart.js) -->
+  <script src="supabase.js"></script>        <!-- knižnica na databázu (Supabase) -->
+  <script src="supabase-nastavenia.js"></script>
   <script src="texty.js"></script>
   <script src="klavesnica.js"></script>
   <script src="vysledky.js"></script>
   <script src="graf.js"></script>
   <script src="chyby.js"></script>
   <script src="script.js"></script>
+  <script src="ziak.js"></script>             <!-- prihlásenie žiaka, spúšťa aplikáciu -->
 </body>
 </html>

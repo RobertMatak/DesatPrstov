@@ -2,14 +2,15 @@
 // Pre každý znak si pamätáme, koľkokrát ho bolo treba napísať (spolu)
 // a koľkokrát sa pri ňom urobila chyba (chyby). Napríklad:
 //   { "a": { spolu: 120, chyby: 3 }, "ď": { spolu: 15, chyby: 4 } }
-// Počas písania sa počíta do aktualnaStatistika, po dopísaní textu sa
-// pripočíta k uloženej štatistike v localStorage (rovnako ako výsledky).
+// Počas písania sa počíta do aktualnaStatistika. Po dopísaní textu sa
+// pripočíta k statistikaZiaka (v pamäti) a spolu s výsledkom sa pošle
+// do databázy (vysledky.js). Po prihlásení sa načíta zo servera (ziak.js).
 
-const KLUC_KLAVESY = "desatPrstov.klavesy";
 const MIN_POKUSOV = 5;     // znaky napísané menej ako 5-krát ešte nehodnotíme
 const PLNA_CERVENA = 0.15; // pri 15 % chýb a viac je kláves úplne červený
 
-let aktualnaStatistika = {};
+let aktualnaStatistika = {}; // práve písaný text
+let statistikaZiaka = {};    // všetko, čo žiak doteraz napísal
 
 // Začiatok nového textu: počítame odznova
 function zacniStatistikuKlavesov() {
@@ -26,32 +27,25 @@ function zapisUhoz(ocakavanyZnak, spravne) {
 }
 
 function nacitajStatistikuKlavesov() {
-  try {
-    const ulozene = localStorage.getItem(KLUC_KLAVESY);
-    return ulozene ? JSON.parse(ulozene) : {};
-  } catch (chyba) {
-    return {};
-  }
+  return statistikaZiaka;
 }
 
-// Po dopísaní textu: pripočíta aktuálny text k uloženej štatistike
+// Po prihlásení: nastaví štatistiku načítanú zo servera (volá ziak.js)
+function nastavStatistikuKlavesov(statistika) {
+  statistikaZiaka = statistika;
+}
+
+// Po dopísaní textu: pripočíta aktuálny text k štatistike žiaka
+// a vráti štatistiku len z tohto textu (tá sa pošle na server)
 function ulozStatistikuKlavesov() {
-  const ulozena = nacitajStatistikuKlavesov();
-  for (const [znak, udaje] of Object.entries(aktualnaStatistika)) {
-    if (!ulozena[znak]) ulozena[znak] = { spolu: 0, chyby: 0 };
-    ulozena[znak].spolu += udaje.spolu;
-    ulozena[znak].chyby += udaje.chyby;
+  const tentoText = aktualnaStatistika;
+  for (const [znak, udaje] of Object.entries(tentoText)) {
+    if (!statistikaZiaka[znak]) statistikaZiaka[znak] = { spolu: 0, chyby: 0 };
+    statistikaZiaka[znak].spolu += udaje.spolu;
+    statistikaZiaka[znak].chyby += udaje.chyby;
   }
-  try {
-    localStorage.setItem(KLUC_KLAVESY, JSON.stringify(ulozena));
-  } catch (chyba) {}
   aktualnaStatistika = {};
-}
-
-function vymazStatistikuKlavesov() {
-  try {
-    localStorage.removeItem(KLUC_KLAVESY);
-  } catch (chyba) {}
+  return tentoText;
 }
 
 // Prevedie štatistiku znakov na štatistiku fyzických klávesov.
