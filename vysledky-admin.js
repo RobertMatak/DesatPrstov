@@ -72,14 +72,13 @@ async function nacitajVysledkyTriedy() {
     }
   }
 
-  // Knihy, ktoré trieda vidí, s kapitolami (bez konceptov) a ich počtom slov
+  // Všetky knihy učiteľa (sú pre všetky triedy) s kapitolami (bez konceptov) a ich počtom slov
   const { data: knihy, error } = await db
     .from("knihy")
-    .select("id, nazov, trieda_id, vytvorene, kapitoly(id, poradie, nazov, text, koncept, vytvorene)")
+    .select("id, nazov, vytvorene, kapitoly(id, poradie, nazov, text, koncept, vytvorene)")
     .order("vytvorene");
   if (error) return ukazHlasku(popisChyby(error), true);
   knihyTriedy = knihy
-    .filter((k) => k.trieda_id === null || k.trieda_id === vybranaTrieda.id)
     .map((k) => ({
       id: k.id,
       nazov: k.nazov,

@@ -79,8 +79,11 @@ async function zobrazPodlaPrihlasenia() {
 
   if (prihlaseny) {
     $("kto").textContent = data.session.user.email;
-    prepniZalozku(spomen("zalozka") || "vysledky"); // záložka pred obnovením stránky
-    await nacitajDlzky(); // dlzky-admin.js
+    prepniSekciu(spomen("sekcia") || "triedy");     // časť stránky pred obnovením (F5)
+    prepniZalozku(spomen("zalozka") || "vysledky"); // záložka triedy pred obnovením
+    await nacitajDlzky();  // dlzky-admin.js
+    await nacitajTexty();  // texty-admin.js
+    await nacitajKnihy();  // knihy-admin.js
     await nacitajTriedy();
   }
 }
@@ -108,7 +111,7 @@ $("odhlasit").addEventListener("click", async () => {
   triedy = [];
   ziaci = [];
   vybranaTrieda = null;
-  for (const kluc of ["trieda", "zalozka", "ziak", "kniha"]) zapamataj(kluc, null);
+  for (const kluc of ["sekcia", "trieda", "zalozka", "ziak", "kniha", "filterTextov"]) zapamataj(kluc, null);
   await zobrazPodlaPrihlasenia();
 });
 
@@ -249,16 +252,40 @@ async function vykresliDetail() {
   await nacitajZiakov();
   if (ziaci.length === 0) prepniZalozku("spravaZiakov"); // prázdna trieda: rovno pridávanie žiakov
   await nacitajVysledkyTriedy(); // vysledky-admin.js
-  await nacitajTexty();          // texty-admin.js
-  await nacitajKnihy();          // knihy-admin.js
 }
 
-// ===== Záložky Výsledky / Žiaci a kódy =====
+// ===== Hlavné časti stránky: Triedy / Náhodné texty / Knihy =====
+const SEKCIE = ["triedy", "texty", "knihy"];
+
+function prepniSekciu(nazov) {
+  if (!SEKCIE.includes(nazov)) nazov = "triedy";
+  for (const t of document.querySelectorAll(".hlavne-zalozky button")) {
+    t.classList.toggle("aktivny", t.dataset.sekcia === nazov);
+  }
+  for (const sekcia of SEKCIE) {
+    $("sekcia-" + sekcia).classList.toggle("skryty", nazov !== sekcia);
+  }
+  zapamataj("sekcia", nazov);
+}
+
+for (const t of document.querySelectorAll(".hlavne-zalozky button")) {
+  t.addEventListener("click", () => {
+    prepniSekciu(t.dataset.sekcia);
+    // Po návrate k triedam obnovíme výsledky: medzitým mohli pribudnúť
+    // nové výsledky žiakov alebo kapitoly v knihách (postup v knihách)
+    if (t.dataset.sekcia === "triedy" && vybranaTrieda) nacitajVysledkyTriedy(); // vysledky-admin.js
+  });
+}
+
+// ===== Záložky triedy: Výsledky / Žiaci a kódy =====
+const ZALOZKY = ["vysledky", "spravaZiakov"];
+
 function prepniZalozku(nazov) {
+  if (!ZALOZKY.includes(nazov)) nazov = "vysledky"; // napr. stará zapamätaná záložka „texty“
   for (const t of document.querySelectorAll(".zalozky button")) {
     t.classList.toggle("aktivny", t.dataset.zalozka === nazov);
   }
-  for (const z of ["vysledky", "spravaZiakov", "texty", "knihy"]) {
+  for (const z of ZALOZKY) {
     $("zalozka-" + z).classList.toggle("skryty", nazov !== z);
   }
   zapamataj("zalozka", nazov);

@@ -37,8 +37,18 @@
 
     <p id="hlaska" class="hlaska skryty"></p>
 
-    <main class="rozlozenie">
-      <!-- Ľavý stĺpec: triedy a dĺžky úryvkov -->
+    <!-- ===== Hlavné časti stránky ===== -->
+    <nav class="hlavne-zalozky">
+      <div class="prepinac">
+        <button data-sekcia="triedy" class="aktivny">Triedy</button>
+        <button data-sekcia="texty">Náhodné texty</button>
+        <button data-sekcia="knihy">Knihy</button>
+      </div>
+    </nav>
+
+    <!-- ===== Časť Triedy ===== -->
+    <main id="sekcia-triedy" class="rozlozenie">
+      <!-- Ľavý stĺpec: zoznam tried -->
       <div class="lavy-stlpec">
         <section class="karta">
           <h2>Triedy</h2>
@@ -61,14 +71,6 @@
             <button type="submit">Pridať</button>
           </form>
         </section>
-
-        <!-- Dĺžky úryvkov podľa ročníkov (riadi dlzky-admin.js) -->
-        <section class="karta">
-          <h2>Úryvky podľa ročníkov</h2>
-          <p class="sivy"><b>Slov:</b> približný počet slov, ktorý žiak napíše naraz. <b>Presnosť:</b> koľko % potrebuje, aby postúpil v knihe. Platí pre všetky triedy ročníka.</p>
-          <div id="dlzkyRocnikov" class="dlzky-mriezka"></div>
-          <button id="ulozitDlzky">Uložiť nastavenia</button>
-        </section>
       </div>
 
       <!-- Pravý stĺpec: vybraná trieda -->
@@ -85,12 +87,10 @@
             </div>
           </div>
 
-          <!-- Záložky: Výsledky / Žiaci a kódy -->
+          <!-- Záložky triedy: Výsledky / Žiaci a kódy -->
           <div class="prepinac zalozky">
             <button data-zalozka="vysledky" class="aktivny">Výsledky</button>
             <button data-zalozka="spravaZiakov">Žiaci a kódy</button>
-            <button data-zalozka="texty">Náhodné texty</button>
-            <button data-zalozka="knihy">Knihy</button>
           </div>
 
           <!-- ===== Záložka Výsledky (riadi vysledky-admin.js) ===== -->
@@ -187,95 +187,115 @@
             </form>
           </div>
 
-          <!-- ===== Záložka Náhodné texty (riadi texty-admin.js) ===== -->
-          <div id="zalozka-texty" class="skryty">
-            <p class="sivy">Z týchto textov a z 10 vstavaných dostávajú žiaci v časti <b>Náhodné texty</b> náhodné úryvky. Knihy sem nepatria, tie sú v záložke Knihy. <span id="dlzkaPreTriedu"></span></p>
-            <div class="zdroj-polia">
-              <input id="autorTextu" placeholder="Autor (napr. Pavol Dobšinský)" maxlength="100">
-              <input id="zdrojTextu" placeholder="Zdroj: kniha, vydanie alebo webová adresa" maxlength="300">
-            </div>
-            <textarea id="novyText" rows="8" placeholder="Sem vlož alebo napíš text (20 až 20 000 znakov)…"></textarea>
-            <!-- Pre ktoré ročníky je text -->
-            <div class="vyber-rocnikov">
-              <span class="sivy">Pre ročníky:</span>
-              <div class="rocniky-zaskrtnutie">
-                <label><input type="checkbox" name="rocnikText" value="1"> 1.</label>
-                <label><input type="checkbox" name="rocnikText" value="2"> 2.</label>
-                <label><input type="checkbox" name="rocnikText" value="3"> 3.</label>
-                <label><input type="checkbox" name="rocnikText" value="4"> 4.</label>
-                <label><input type="checkbox" name="rocnikText" value="5"> 5.</label>
-                <label><input type="checkbox" name="rocnikText" value="6"> 6.</label>
-                <label><input type="checkbox" name="rocnikText" value="7"> 7.</label>
-                <label><input type="checkbox" name="rocnikText" value="8"> 8.</label>
-                <label><input type="checkbox" name="rocnikText" value="9"> 9.</label>
-              </div>
-              <div class="rychle-rocniky">
-                <button type="button" class="druhotne male" data-rocniky="1,2,3,4">1.–4.</button>
-                <button type="button" class="druhotne male" data-rocniky="5,6,7,8,9">5.–9.</button>
-                <button type="button" class="druhotne male" data-rocniky="1,2,3,4,5,6,7,8,9">všetky</button>
-                <button type="button" class="druhotne male" data-rocniky="">žiadny</button>
-              </div>
-            </div>
-            <button id="pridatText">Pridať text</button>
-            <button id="zrusitUpravuTextu" class="druhotne skryty">Zrušiť úpravu</button>
-
-            <div class="nadpis-triedy">
-              <h3 id="nadpisZoznamuTextov">Náhodné texty pre túto triedu <span id="pocetTextov" class="sivy"></span></h3>
-              <label class="volba-konceptu"><input type="checkbox" id="vsetkyMojeTexty"> Zobraziť všetky moje texty</label>
-            </div>
-            <ul id="zoznamTextov" class="zoznam-textov"></ul>
-            <p id="ziadneTexty" class="sivy skryty">Zatiaľ žiadne. Žiaci píšu len vstavané texty.</p>
-          </div>
-
-          <!-- ===== Záložka Knihy (riadi knihy-admin.js) ===== -->
-          <div id="zalozka-knihy" class="skryty">
-            <!-- Zoznam kníh -->
-            <div id="zoznamKnihPohlad">
-              <p class="sivy">Knihy žiaci píšu v časti <b>Príbehy</b>, kapitolu po kapitole. Do náhodných textov sa nedostanú, musia si ich „vypísať“.</p>
-              <ul id="zoznamKnih" class="zoznam-textov"></ul>
-              <p id="ziadneKnihy" class="sivy skryty">Zatiaľ žiadne knihy.</p>
-
-              <h3>Nová kniha</h3>
-              <input id="nazovKnihy" class="cela-sirka" placeholder="Názov knihy (napr. Soľ nad zlato)" maxlength="100">
-              <div class="zdroj-polia">
-                <input id="autorKnihy" placeholder="Autor (napr. Pavol Dobšinský)" maxlength="100">
-                <input id="zdrojKnihy" placeholder="Zdroj: kniha, vydanie alebo webová adresa" maxlength="300">
-              </div>
-              <div class="volby-textu">
-                <label><input type="radio" name="komuKniha" value="trieda" checked> len pre triedu <span id="nazovTriedyKnihy"></span></label>
-                <label><input type="radio" name="komuKniha" value="vsetky"> pre všetky moje triedy</label>
-              </div>
-              <button id="pridatKnihu">Vytvoriť knihu</button>
-            </div>
-
-            <!-- Otvorená kniha s kapitolami -->
-            <div id="detailKnihyPohlad" class="skryty">
-              <div class="nadpis-triedy">
-                <button id="spatNaKnihy" class="druhotne">← Všetky knihy</button>
-                <div>
-                  <button id="upravitKnihu" class="druhotne">Upraviť názov a zdroj</button>
-                  <button id="zmazatKnihu" class="nebezpecne">Zmazať knihu</button>
-                </div>
-              </div>
-              <h3 id="nazovVybranejKnihy"></h3>
-              <p id="popisVybranejKnihy" class="sivy"></p>
-
-              <ol id="zoznamKapitol" class="zoznam-textov zoznam-kapitol"></ol>
-              <p id="ziadneKapitoly" class="sivy skryty">Kniha zatiaľ nemá kapitoly. Pridaj prvú nižšie.</p>
-
-              <h3 id="nadpisFormuKapitoly">Pridať kapitolu</h3>
-              <input id="nazovKapitoly" class="cela-sirka" placeholder="Názov kapitoly (napr. Kráľ a tri dcéry), nepovinné" maxlength="100">
-              <textarea id="textKapitoly" rows="10" placeholder="Text kapitoly (20 až 20 000 znakov)…"></textarea>
-              <label class="volba-konceptu">
-                <input type="checkbox" id="konceptKapitoly">
-                Ešte nie je hotová – žiaci ju zatiaľ nevidia (koncept)
-              </label>
-              <button id="pridatKapitolu">Pridať kapitolu</button>
-              <button id="zrusitUpravuKapitoly" class="druhotne skryty">Zrušiť úpravu</button>
-            </div>
-          </div>
-
           <p id="ziadniZiaci" class="sivy skryty">V triede zatiaľ nie sú žiaci. Pridáš ich v záložke Žiaci a kódy.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===== Časť Náhodné texty (riadi texty-admin.js) ===== -->
+    <main id="sekcia-texty" class="rozlozenie skryty">
+      <div class="lavy-stlpec">
+        <!-- Dĺžky úryvkov podľa ročníkov (riadi dlzky-admin.js) -->
+        <section class="karta">
+          <h2>Úryvky podľa ročníkov</h2>
+          <p class="sivy"><b>Slov:</b> približný počet slov, ktorý žiak napíše naraz. <b>Presnosť:</b> koľko % potrebuje, aby postúpil v knihe. Platí pre všetky triedy ročníka.</p>
+          <div id="dlzkyRocnikov" class="dlzky-mriezka"></div>
+          <button id="ulozitDlzky">Uložiť nastavenia</button>
+        </section>
+      </div>
+
+      <section class="karta">
+        <div class="nadpis-triedy">
+          <h2>Náhodné texty <span id="pocetTextov" class="sivy"></span></h2>
+          <button id="novyTextTlacidlo">+ Nový text</button>
+        </div>
+        <p class="sivy">Z týchto textov a z 10 vstavaných dostávajú žiaci v časti <b>Náhodné texty</b> náhodné úryvky. Každý text vidia všetky tvoje triedy ročníkov, pre ktoré je určený.</p>
+
+        <!-- Formulár: nový text alebo úprava existujúceho (na začiatku skrytý) -->
+        <div id="formularTextu" class="formular skryty">
+          <h3 id="nadpisFormularaTextu">Nový text</h3>
+          <div class="zdroj-polia">
+            <input id="autorTextu" placeholder="Autor (napr. Pavol Dobšinský)" maxlength="100">
+            <input id="zdrojTextu" placeholder="Zdroj: kniha, vydanie alebo webová adresa" maxlength="300">
+          </div>
+          <textarea id="novyText" rows="8" placeholder="Sem vlož alebo napíš text (20 až 20 000 znakov)…"></textarea>
+          <!-- Pre ktoré ročníky je text -->
+          <div class="vyber-rocnikov">
+            <span id="popisVyberuRocnikov" class="sivy">Pre ročníky:</span>
+            <div class="rocniky-zaskrtnutie">
+              <label><input type="checkbox" name="rocnikText" value="1"> 1.</label>
+              <label><input type="checkbox" name="rocnikText" value="2"> 2.</label>
+              <label><input type="checkbox" name="rocnikText" value="3"> 3.</label>
+              <label><input type="checkbox" name="rocnikText" value="4"> 4.</label>
+              <label><input type="checkbox" name="rocnikText" value="5"> 5.</label>
+              <label><input type="checkbox" name="rocnikText" value="6"> 6.</label>
+              <label><input type="checkbox" name="rocnikText" value="7"> 7.</label>
+              <label><input type="checkbox" name="rocnikText" value="8"> 8.</label>
+              <label><input type="checkbox" name="rocnikText" value="9"> 9.</label>
+            </div>
+            <div class="rychle-rocniky">
+              <button type="button" class="druhotne male" data-rocniky="1,2,3,4">1.–4.</button>
+              <button type="button" class="druhotne male" data-rocniky="5,6,7,8,9">5.–9.</button>
+              <button type="button" class="druhotne male" data-rocniky="1,2,3,4,5,6,7,8,9">všetky</button>
+              <button type="button" class="druhotne male" data-rocniky="">žiadny</button>
+            </div>
+          </div>
+          <button id="pridatText">Pridať text</button>
+          <button id="zrusitUpravuTextu" class="druhotne">Zrušiť</button>
+          <span id="chybaRocnika" class="upozornenie">Zaškrtni aspoň jeden ročník.</span>
+        </div>
+
+        <!-- Filter podľa ročníkov: Všetky | 1. | 2. | … -->
+        <div id="filterRocnikov" class="prepinac filter-rocnikov"></div>
+        <p id="popisFiltra" class="sivy"></p>
+        <ul id="zoznamTextov" class="zoznam-textov"></ul>
+        <p id="ziadneTexty" class="sivy skryty"></p>
+      </section>
+    </main>
+
+    <!-- ===== Časť Knihy (riadi knihy-admin.js) ===== -->
+    <main id="sekcia-knihy" class="jeden-stlpec skryty">
+      <section class="karta">
+        <h2>Knihy</h2>
+        <!-- Zoznam kníh -->
+        <div id="zoznamKnihPohlad">
+          <p class="sivy">Knihy žiaci píšu v časti <b>Príbehy</b>, kapitolu po kapitole. Do náhodných textov sa nedostanú, musia si ich „vypísať“. Každá kniha je pre všetky tvoje triedy. Potrebnú presnosť pre ročníky nastavíš v časti <b>Náhodné texty</b> → Úryvky podľa ročníkov.</p>
+          <ul id="zoznamKnih" class="zoznam-textov"></ul>
+          <p id="ziadneKnihy" class="sivy skryty">Zatiaľ žiadne knihy.</p>
+
+          <h3>Nová kniha</h3>
+          <input id="nazovKnihy" class="cela-sirka" placeholder="Názov knihy (napr. Soľ nad zlato)" maxlength="100">
+          <div class="zdroj-polia">
+            <input id="autorKnihy" placeholder="Autor (napr. Pavol Dobšinský)" maxlength="100">
+            <input id="zdrojKnihy" placeholder="Zdroj: kniha, vydanie alebo webová adresa" maxlength="300">
+          </div>
+          <button id="pridatKnihu">Vytvoriť knihu</button>
+        </div>
+
+        <!-- Otvorená kniha s kapitolami -->
+        <div id="detailKnihyPohlad" class="skryty">
+          <div class="nadpis-triedy">
+            <button id="spatNaKnihy" class="druhotne">← Všetky knihy</button>
+            <div>
+              <button id="upravitKnihu" class="druhotne">Upraviť názov a zdroj</button>
+              <button id="zmazatKnihu" class="nebezpecne">Zmazať knihu</button>
+            </div>
+          </div>
+          <h3 id="nazovVybranejKnihy"></h3>
+          <p id="popisVybranejKnihy" class="sivy"></p>
+
+          <ol id="zoznamKapitol" class="zoznam-textov zoznam-kapitol"></ol>
+          <p id="ziadneKapitoly" class="sivy skryty">Kniha zatiaľ nemá kapitoly. Pridaj prvú nižšie.</p>
+
+          <h3 id="nadpisFormuKapitoly">Pridať kapitolu</h3>
+          <input id="nazovKapitoly" class="cela-sirka" placeholder="Názov kapitoly (napr. Kráľ a tri dcéry), nepovinné" maxlength="100">
+          <textarea id="textKapitoly" rows="10" placeholder="Text kapitoly (20 až 20 000 znakov)…"></textarea>
+          <label class="volba-konceptu">
+            <input type="checkbox" id="konceptKapitoly">
+            Ešte nie je hotová – žiaci ju zatiaľ nevidia (koncept)
+          </label>
+          <button id="pridatKapitolu">Pridať kapitolu</button>
+          <button id="zrusitUpravuKapitoly" class="druhotne skryty">Zrušiť úpravu</button>
         </div>
       </section>
     </main>

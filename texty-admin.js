@@ -1,13 +1,13 @@
 // ===== Náhodné texty (učiteľ) =====
 // Text patrí vybraným ročníkom (stĺpec rocniky, napr. [3, 4] alebo [7, 8, 9]).
 // Uvidia ho všetky triedy učiteľa v týchto ročníkoch.
+// Na stránke má vlastnú časť „Náhodné texty“ s filtrom podľa ročníkov.
 // Pravidlá v databáze zaručujú, že učiteľ vidí a mení len svoje texty.
 
 const MIN_DLZKA_TEXTU = 20;    // kratší text nemá na precvičovanie zmysel
 const MAX_DLZKA_TEXTU = 20000; // celá rozprávka; žiaci ho dostávajú po úryvkoch
 
 let vsetkyTexty = [];  // všetky náhodné texty učiteľa
-let textyTriedy = [];  // tie, ktoré sa práve zobrazujú (pre ročník triedy alebo všetky)
 let upravovanyText = null; // text načítaný vo formulári na úpravu (null = pridávame nový)
 
 // Neviditeľné znaky, ktoré sa často skryjú v texte skopírovanom z Wordu, PDF alebo webu.
@@ -79,16 +79,25 @@ function oznacRocniky(rocniky) {
   for (const box of document.querySelectorAll("input[name=rocnikText]")) {
     box.checked = rocniky.includes(Number(box.value));
   }
+  aktualizujTlacidloTextu();
 }
 
 function vybraneRocniky() {
   return [...document.querySelectorAll("input[name=rocnikText]:checked")].map((b) => Number(b.value));
 }
 
-// Predvolene je zaškrtnutý ročník vybranej triedy
-function predvoleneRocniky() {
-  oznacRocniky(vybranaTrieda && vybranaTrieda.rocnik ? [vybranaTrieda.rocnik] : []);
+// Kým nie je zaškrtnutý ani jeden ročník, text sa nedá uložiť:
+// tlačidlo je vypnuté a vedľa neho svieti upozornenie.
+function aktualizujTlacidloTextu() {
+  const ziadny = vybraneRocniky().length === 0;
+  $("pridatText").disabled = ziadny;
+  $("chybaRocnika").classList.toggle("skryty", !ziadny);
 }
+
+for (const box of document.querySelectorAll("input[name=rocnikText]")) {
+  box.addEventListener("change", aktualizujTlacidloTextu);
+}
+aktualizujTlacidloTextu(); // na začiatku nie je zaškrtnuté nič
 
 // Rýchle tlačidlá 1.–4., 5.–9., všetky, žiadny
 for (const b of document.querySelectorAll(".rychle-rocniky button")) {
@@ -97,35 +106,62 @@ for (const b of document.querySelectorAll(".rychle-rocniky button")) {
   });
 }
 
-$("vsetkyMojeTexty").addEventListener("change", () => vykresliTexty());
-
 async function nacitajTexty() {
-  $("dlzkaPreTriedu").textContent = popisDlzkyTriedy(); // dlzky-admin.js
-
   const { data, error } = await db.from("texty").select("id, rocniky, nazov, autor, zdroj, text, vytvorene").order("vytvorene");
   if (error) return ukazHlasku(popisChyby(error), true);
   vsetkyTexty = data;
 
-  // Upravovaný text medzitým zmizol → zrušíme úpravu; inak nastavíme ročník triedy
-  if (upravovanyText && !vsetkyTexty.some((t) => t.id === upravovanyText.id)) zrusUpravuTextu();
-  if (!upravovanyText) predvoleneRocniky();
+  // Upravovaný text medzitým zmizol → zavrieme formulár
+  if (upravovanyText && !vsetkyTexty.some((t) => t.id === upravovanyText.id)) zatvorFormularTextu();
   vykresliTexty();
 }
 
+
+// ===== Filter podľa ročníkov: Všetky | 1. (3) | 2. (0) | … =====
+// "vsetky" alebo číslo ročníka 1–9; zapamätá sa aj po obnovení stránky (admin.js)
+let filterTextov = Number(spomen("filterTextov")) || "vsetky";
+
+function vykresliFilter() {
+  const filter = $("filterRocnikov");
+  filter.innerHTML = "";
+  const moznosti = ["vsetky", 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  for (const m of moznosti) {
+    const pocet = m === "vsetky" ? vsetkyTexty.length : vsetkyTexty.filter((t) => t.rocniky.includes(m)).length;
+    const b = document.createElement("button");
+    b.textContent = m === "vsetky" ? "Všetky" : `${m}.`;
+    const cislo = document.createElement("span");
+    cislo.className = "pocet";
+    cislo.textContent = pocet;
+    b.appendChild(cislo);
+    b.title = m === "vsetky" ? "Všetky tvoje náhodné texty" : `Texty, ktoré píše ${m}. ročník`;
+    if (m === filterTextov) b.classList.add("aktivny");
+    if (pocet === 0 && m !== "vsetky") b.classList.add("prazdny");
+    b.addEventListener("click", () => {
+      filterTextov = m;
+      zapamataj("filterTextov", m === "vsetky" ? null : String(m)); // admin.js
+      vykresliTexty();
+    });
+    filter.appendChild(b);
+  }
+}
+
 function vykresliTexty() {
-  // Texty pre ročník triedy, alebo všetky (prepínač, alebo trieda bez ročníka)
-  const rocnik = vybranaTrieda.rocnik;
-  const vsetky = $("vsetkyMojeTexty").checked || !rocnik;
-  textyTriedy = vsetky ? vsetkyTexty : vsetkyTexty.filter((t) => t.rocniky.includes(rocnik));
-  $("nadpisZoznamuTextov").firstChild.textContent =
-    vsetky ? "Všetky moje náhodné texty " : `Náhodné texty pre ${rocnik}. ročník `;
+  vykresliFilter();
+  const rocnik = filterTextov === "vsetky" ? null : filterTextov;
+  const zobrazene = rocnik ? vsetkyTexty.filter((t) => t.rocniky.includes(rocnik)) : vsetkyTexty;
+
+  $("pocetTextov").textContent = vsetkyTexty.length > 0 ? `(${vsetkyTexty.length})` : "";
+  $("popisFiltra").textContent = rocnik ? popisRocnika(rocnik) : ""; // dlzky-admin.js
+  $("ziadneTexty").textContent = rocnik
+    ? `Pre ${rocnik}. ročník zatiaľ nemáš žiadny text. Žiaci tohto ročníka píšu len vstavané texty.`
+    : "Zatiaľ žiadne. Žiaci píšu len vstavané texty. Prvý pridáš tlačidlom + Nový text.";
+  $("ziadneTexty").classList.toggle("skryty", zobrazene.length > 0);
 
   const zoznam = $("zoznamTextov");
   zoznam.innerHTML = "";
-  $("ziadneTexty").classList.toggle("skryty", textyTriedy.length > 0);
-  $("pocetTextov").textContent = textyTriedy.length > 0 ? `(${textyTriedy.length})` : "";
 
-  for (const t of textyTriedy) {
+  for (const t of zobrazene) {
     const li = document.createElement("li");
     if (upravovanyText && upravovanyText.id === t.id) li.classList.add("upravovany");
 
@@ -163,30 +199,38 @@ function vykresliTexty() {
   }
 }
 
-// Ten istý formulár slúži na pridanie nového textu aj na úpravu existujúceho
-function upravText(t) {
+
+// ===== Formulár: nový text alebo úprava existujúceho =====
+// t = text na úpravu, alebo null pre nový text (vtedy nie je zaškrtnutý žiadny ročník)
+function otvorFormularTextu(t) {
   upravovanyText = t;
-  $("novyText").value = t.text;
-  $("autorTextu").value = t.autor || "";
-  $("zdrojTextu").value = t.zdroj || "";
-  oznacRocniky(t.rocniky);
-  $("pridatText").textContent = "Uložiť zmeny";
-  $("zrusitUpravuTextu").classList.remove("skryty");
+  $("novyText").value = t ? t.text : "";
+  $("autorTextu").value = t ? t.autor || "" : "";
+  $("zdrojTextu").value = t ? t.zdroj || "" : "";
+  oznacRocniky(t ? t.rocniky : []);
+  $("nadpisFormularaTextu").textContent = t ? "Úprava textu" : "Nový text";
+  $("pridatText").textContent = t ? "Uložiť zmeny" : "Pridať text";
+  $("formularTextu").classList.remove("skryty");
+  $("novyTextTlacidlo").classList.add("skryty");
   vykresliTexty(); // zvýrazní upravovaný text
-  $("autorTextu").scrollIntoView({ behavior: "smooth", block: "center" });
-  $("novyText").focus({ preventScroll: true });
+  $("formularTextu").scrollIntoView({ behavior: "smooth", block: "start" });
+  (t ? $("novyText") : $("autorTextu")).focus({ preventScroll: true });
 }
 
-function zrusUpravuTextu() {
+function zatvorFormularTextu() {
   upravovanyText = null;
   for (const id of ["novyText", "autorTextu", "zdrojTextu"]) $(id).value = "";
-  predvoleneRocniky();
-  $("pridatText").textContent = "Pridať text";
-  $("zrusitUpravuTextu").classList.add("skryty");
+  oznacRocniky([]);
+  $("formularTextu").classList.add("skryty");
+  $("novyTextTlacidlo").classList.remove("skryty");
 }
 
+const upravText = (t) => otvorFormularTextu(t);
+
+$("novyTextTlacidlo").addEventListener("click", () => otvorFormularTextu(null));
+
 $("zrusitUpravuTextu").addEventListener("click", () => {
-  zrusUpravuTextu();
+  zatvorFormularTextu();
   vykresliTexty();
 });
 
@@ -228,10 +272,15 @@ $("pridatText").addEventListener("click", () => {
       if (error) return ukazHlasku(popisChyby(error), true);
       ukazHlasku(`Text bol pridaný pre ${popisRocnikov(rocniky)}.`);
     }
+    // Ak by sa uložený text pri zvolenom filtri nezobrazil, prepneme filter na jeho ročník
+    if (filterTextov !== "vsetky" && !rocniky.includes(filterTextov)) {
+      filterTextov = rocniky[0];
+      zapamataj("filterTextov", String(filterTextov));
+    }
 
-    zrusUpravuTextu();
+    zatvorFormularTextu();
     await nacitajTexty();
-  });
+  }).then(aktualizujTlacidloTextu); // sTlacidlom na konci tlačidlo zapne; znova skontrolujeme ročníky
 });
 
 async function zmazText(t) {
@@ -241,7 +290,7 @@ async function zmazText(t) {
 
   const { error } = await db.from("texty").delete().eq("id", t.id);
   if (error) return ukazHlasku(popisChyby(error), true);
-  if (upravovanyText && upravovanyText.id === t.id) zrusUpravuTextu();
+  if (upravovanyText && upravovanyText.id === t.id) zatvorFormularTextu();
   ukazHlasku("Text bol zmazaný.");
   await nacitajTexty();
 }

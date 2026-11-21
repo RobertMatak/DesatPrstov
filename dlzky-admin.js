@@ -64,11 +64,10 @@ function potrebnaPresnostTriedy() {
   return vybranaTrieda && vybranaTrieda.rocnik ? presnosti[vybranaTrieda.rocnik - 1] : 90;
 }
 
-// Text v záložke Náhodné texty: koľko slov píše vybraná trieda
-function popisDlzkyTriedy() {
-  if (!vybranaTrieda || !vybranaTrieda.rocnik) return "";
-  const i = vybranaTrieda.rocnik - 1;
-  return `Trieda ${vybranaTrieda.nazov} píše úryvky po približne ${dlzky[i]} slovách ` +
+// Popis pod filtrom náhodných textov: koľko slov píše ročník a akú presnosť potrebuje
+function popisRocnika(rocnik) {
+  const i = rocnik - 1;
+  return `${rocnik}. ročník píše úryvky po približne ${dlzky[i]} slovách ` +
     `a v knihách potrebuje presnosť aspoň ${presnosti[i]} %.`;
 }
 
@@ -97,7 +96,7 @@ $("ulozitDlzky").addEventListener("click", () => {
 
     dlzky = noveDlzky;
     presnosti = novePresnosti;
-    $("dlzkaPreTriedu").textContent = popisDlzkyTriedy();
+    vykresliTexty(); // texty-admin.js: popis pod filtrom ročníkov
     ukazHlasku("Nastavenia úryvkov sú uložené. Žiaci ich dostanú pri ďalšom prihlásení alebo obnovení stránky.");
     if (vybranaTrieda) vykresliAnalyzu(); // vysledky-admin.js: upozornenia „zasekol sa“ podľa novej presnosti
   });

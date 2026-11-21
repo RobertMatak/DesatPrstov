@@ -1,9 +1,10 @@
 // ===== Knihy a kapitoly (učiteľ) =====
-// Kniha patrí jednej triede (trieda_id) alebo všetkým triedam učiteľa (null).
+// Každá kniha je pre všetky triedy učiteľa (stĺpec trieda_id ostáva prázdny).
+// Na stránke má vlastnú časť „Knihy“, nezávislú od vybranej triedy.
 // Kapitoly majú poradie (0, 1, 2…), v ktorom ich žiaci píšu.
 // Pravidlá v databáze zaručujú, že učiteľ vidí a mení len svoje knihy.
 
-let knihy = [];          // knihy, ktoré vidí vybraná trieda
+let knihy = [];          // všetky knihy učiteľa
 let vybranaKniha = null; // otvorená kniha (null = zoznam kníh)
 let kapitoly = [];       // kapitoly otvorenej knihy v poradí
 let upravovanaKapitola = null; // kapitola načítaná vo formulári na úpravu (null = pridávame novú)
@@ -12,8 +13,6 @@ let upravovanaKapitola = null; // kapitola načítaná vo formulári na úpravu 
 const riadokAleboNull = (text) => text.trim().replace(/\s+/g, " ") || null;
 
 async function nacitajKnihy() {
-  $("nazovTriedyKnihy").textContent = vybranaTrieda.nazov;
-
   // "kapitoly(count)" pridá ku každej knihe počet jej kapitol
   const { data, error } = await db
     .from("knihy")
@@ -21,7 +20,7 @@ async function nacitajKnihy() {
     .order("vytvorene");
   if (error) return ukazHlasku(popisChyby(error), true);
 
-  knihy = data.filter((k) => k.trieda_id === null || k.trieda_id === vybranaTrieda.id);
+  knihy = data;
 
   // Otvorená kniha: doterajšia, alebo zapamätaná pred obnovením stránky (admin.js)
   const idKnihy = vybranaKniha ? vybranaKniha.id : spomen("kniha");
@@ -55,11 +54,7 @@ function ukazZoznamKnih() {
       [k.autor, `${pocet} ${pocet === 1 ? "kapitola" : pocet >= 2 && pocet <= 4 ? "kapitoly" : "kapitol"}`]
         .filter((x) => x).join(" · ")));
 
-    const znacka = document.createElement("span");
-    znacka.className = "znacka" + (k.trieda_id === null ? " vsetky" : "");
-    znacka.textContent = k.trieda_id === null ? "všetky triedy" : "len " + vybranaTrieda.nazov;
-
-    li.append(nahlad, znacka, tlacidlo("Otvoriť", "druhotne", () => otvorKnihu(k))); // tlacidlo je z admin.js
+    li.append(nahlad, tlacidlo("Otvoriť", "druhotne", () => otvorKnihu(k))); // tlacidlo je z admin.js
     zoznam.appendChild(li);
   }
 }
@@ -70,12 +65,11 @@ $("pridatKnihu").addEventListener("click", () => {
     if (!nazov) return ukazHlasku("Napíš názov knihy.", true);
     if (knihy.some((k) => k.nazov === nazov)) return ukazHlasku(`Kniha „${nazov}“ už existuje.`, true);
 
-    const preVsetky = document.querySelector("input[name=komuKniha]:checked").value === "vsetky";
     const { data, error } = await db.from("knihy").insert({
       nazov,
       autor: riadokAleboNull($("autorKnihy").value),
       zdroj: riadokAleboNull($("zdrojKnihy").value),
-      trieda_id: preVsetky ? null : vybranaTrieda.id,
+      trieda_id: null, // kniha je pre všetky triedy
     }).select().single();
     if (error) return ukazHlasku(popisChyby(error), true);
 
@@ -106,9 +100,8 @@ async function otvorKnihu(kniha) {
   $("zoznamKnihPohlad").classList.add("skryty");
   $("detailKnihyPohlad").classList.remove("skryty");
   $("nazovVybranejKnihy").textContent = kniha.nazov;
-  const pre = kniha.trieda_id === null ? "pre všetky tvoje triedy" : "len pre " + vybranaTrieda.nazov;
   $("popisVybranejKnihy").textContent =
-    [kniha.autor, kniha.zdroj ? "zdroj: " + kniha.zdroj : "zdroj nie je uvedený", pre].filter((x) => x).join(" · ");
+    [kniha.autor, kniha.zdroj ? "zdroj: " + kniha.zdroj : "zdroj nie je uvedený"].filter((x) => x).join(" · ");
   vykresliKapitoly();
 }
 

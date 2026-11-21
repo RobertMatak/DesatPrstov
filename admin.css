@@ -99,6 +99,24 @@ button:disabled { opacity: 0.5; cursor: wait; }
 
 .hlaska.chyba { background: #fbe3e1; color: #b3261e; }
 
+/* ===== Hlavné časti: Triedy / Náhodné texty / Knihy ===== */
+.hlavne-zalozky {
+  max-width: 1100px;
+  margin: 0 auto 16px;
+}
+
+.hlavne-zalozky .prepinac { margin-bottom: 0; }
+
+.hlavne-zalozky .prepinac button {
+  font-size: 16px;
+  padding: 8px 22px;
+}
+
+.jeden-stlpec {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
 .rozlozenie {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -487,3 +505,38 @@ select {
   background: #2a8a3e;
   border-radius: 4px;
 }
+
+/* ===== Náhodné texty: filter ročníkov a formulár ===== */
+.filter-rocnikov {
+  flex-wrap: wrap;
+  margin: 18px 0 6px;
+}
+
+.filter-rocnikov button { padding: 5px 9px; }
+
+.filter-rocnikov .pocet {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #e4e1d9;
+  color: #555;
+  font-size: 12px;
+}
+
+.filter-rocnikov button.aktivny .pocet { background: #222; color: white; }
+.filter-rocnikov button.prazdny { color: #aaa; }
+
+.formular {
+  background: #faf9f5;
+  border: 1px solid #ebe8e0;
+  border-radius: 10px;
+  padding: 4px 16px 16px;
+  margin: 14px 0;
+}
+
+.formular h3 { margin-top: 12px; }
+
+#pridatText:disabled { cursor: not-allowed; }
+#chybaRocnika { margin-left: 8px; }
