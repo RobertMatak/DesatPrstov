@@ -1,7 +1,8 @@
 -- =====================================================================
 --  Desať Prstov – fáza 11b: sieň slávy (rekord lekcie všetkých čias)
---  Spúšťa sa raz, PO súbore faza11.sql:
+--  Spúšťa sa PO súbore faza11.sql:
 --  Supabase → SQL Editor → New query → vložiť celý súbor → Run
+--  Dá sa spustiť aj viackrát (napr. po úprave súboru), nič sa tým nepokazí.
 --
 --  Pri každom výsledku z lekcie, ktorú má žiak v rozsahu svojho ročníka,
 --  sa jeho rating v lekcii zapíše do tabuľky rekordy_lekcii (ak je lepší
@@ -23,7 +24,7 @@ as $$
 $$;
 
 -- 2) Tabuľka rekordov: najlepší rating žiaka v lekcii za jeden školský rok
-create table public.rekordy_lekcii (
+create table if not exists public.rekordy_lekcii (
   id          bigint generated always as identity primary key,
   ziak_id     uuid references public.ziaci (id) on delete set null,  -- po zmazaní žiaka ostane rekord bez väzby
   ucitel_id   uuid not null references auth.users (id) on delete cascade, -- učiteľ triedy v tom čase
@@ -38,7 +39,7 @@ create table public.rekordy_lekcii (
   unique (ziak_id, lekcia, skolsky_rok)
 );
 
-create index on public.rekordy_lekcii (lekcia, body desc);
+create index if not exists rekordy_lekcii_lekcia_body on public.rekordy_lekcii (lekcia, body desc);
 
 alter table public.rekordy_lekcii enable row level security;
 -- Supabase dáva novým tabuľkám všetky práva (aj TRUNCATE, ktoré obíde pravidlá), preto najprv všetko zoberieme
@@ -46,12 +47,41 @@ revoke all on public.rekordy_lekcii from anon, authenticated;
 grant select, delete on public.rekordy_lekcii to authenticated;  -- zapisuje len databáza sama
 
 -- Učiteľ vidí a môže zmazať rekordy žiakov svojich tried (napr. keď niekto písal za spolužiaka)
+drop policy if exists "ucitel vidi rekordy svojich ziakov" on public.rekordy_lekcii;
+drop policy if exists "ucitel maze rekordy svojich ziakov" on public.rekordy_lekcii;
 create policy "ucitel vidi rekordy svojich ziakov" on public.rekordy_lekcii
   for select to authenticated using (ucitel_id = (select auth.uid()));
 create policy "ucitel maze rekordy svojich ziakov" on public.rekordy_lekcii
   for delete to authenticated using (ucitel_id = (select auth.uid()));
 
--- 3) Zápis rekordu žiaka v lekcii (volá uloz_vysledok, žiak ani učiteľ ju volať nemôžu)
+-- 3) Rating žiaka v lekcii len z výsledkov jedného školského roka
+--    (rovnaký výpočet ako rating_lekcie: priemer najlepších bodov z cvičení)
+create or replace function public.rating_ziaka_v_roku(p_ziak_id uuid, p_lekcia int, p_rok text)
+returns table (body numeric, rychlost int, presnost int)
+language sql
+stable
+set search_path = ''
+as $$
+  with najlepsie as (
+    select distinct on (v.cvicenie) v.cvicenie, v.body, v.rychlost, v.presnost
+    from public.vysledky v
+    where v.ziak_id = p_ziak_id and v.druh = 'lekcia' and v.lekcia = p_lekcia
+      and v.cvicenie between 1 and public.pocet_cviceni(p_lekcia)
+      and public.skolsky_rok(v.datum) = p_rok
+    order by v.cvicenie, v.body desc, v.presnost desc
+  )
+  select round(sum(n.body) / public.pocet_cviceni(p_lekcia), 1),
+         round(avg(n.rychlost))::int,
+         round(avg(n.presnost))::int
+  from najlepsie n
+  having count(*) > 0;
+$$;
+
+revoke execute on function public.rating_ziaka_v_roku(uuid, int, text) from public, anon, authenticated;
+
+-- 4) Zápis rekordu žiaka v lekcii po uložení výsledku (volá uloz_vysledok)
+--    Zapíše sa len vtedy, keď má žiak lekciu v rozsahu svojho ročníka
+--    (lekcie na opakovanie sa do siene slávy nerátajú).
 create or replace function public.zapis_rekord_lekcie(p_ziak_id uuid, p_lekcia int)
 returns void
 language plpgsql
@@ -60,13 +90,17 @@ security definer
 set search_path = ''
 as $$
 declare
-  r  record;
-  z  public.ziaci;
-  tr public.triedy;
+  r   record;
+  z   public.ziaci;
+  tr  public.triedy;
+  rok text := public.skolsky_rok(now());
 begin
   -- rating_lekcie vráti žiaka, len ak je aktívny a má lekciu v rozsahu svojho ročníka
-  select * into r from public.rating_lekcie(p_lekcia) x where x.ziak_id = p_ziak_id;
-  if r.ziak_id is null then
+  if not exists (select 1 from public.rating_lekcie(p_lekcia) x where x.ziak_id = p_ziak_id) then
+    return;
+  end if;
+  select * into r from public.rating_ziaka_v_roku(p_ziak_id, p_lekcia, rok);
+  if r.body is null then
     return;
   end if;
   select * into z from public.ziaci where id = p_ziak_id;
@@ -74,8 +108,7 @@ begin
 
   insert into public.rekordy_lekcii as rk
     (ziak_id, ucitel_id, lekcia, skolsky_rok, meno, trieda, body, rychlost, presnost)
-  values (z.id, tr.ucitel_id, p_lekcia, public.skolsky_rok(now()), z.meno, tr.nazov,
-          r.body, r.rychlost, r.presnost)
+  values (z.id, tr.ucitel_id, p_lekcia, rok, z.meno, tr.nazov, r.body, r.rychlost, r.presnost)
   on conflict (ziak_id, lekcia, skolsky_rok) do update
     set body = excluded.body, rychlost = excluded.rychlost, presnost = excluded.presnost,
         meno = excluded.meno, trieda = excluded.trieda, datum = now()
@@ -85,7 +118,50 @@ $$;
 
 revoke execute on function public.zapis_rekord_lekcie(uuid, int) from public, anon, authenticated;
 
--- 4) Uloženie výsledku: rovnaké ako vo faza9.sql, navyše zápis rekordu pri lekcii
+-- 5) Keď učiteľ zmaže výsledok z lekcie (napr. niekto písal za spolužiaka),
+--    záznam žiaka v sieni slávy za ten školský rok sa prepočíta zo zvyšných
+--    výsledkov. Ak už v lekcii v tom roku nič nemá, záznam zmizne.
+--    Pri zmazaní celého žiaka (alebo triedy) sa nič neprepočítava: rekord má ostať.
+create or replace function public.po_zmazani_vysledku()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  rok text := public.skolsky_rok(old.datum);
+  r   record;
+begin
+  if old.druh <> 'lekcia' or old.lekcia is null then
+    return null;
+  end if;
+  -- Maže sa celý žiak? Potom už v tabuľke ziaci nie je a rekord nechávame.
+  if not exists (select 1 from public.ziaci where id = old.ziak_id) then
+    return null;
+  end if;
+
+  select * into r from public.rating_ziaka_v_roku(old.ziak_id, old.lekcia, rok);
+  if r.body is null then
+    delete from public.rekordy_lekcii
+    where ziak_id = old.ziak_id and lekcia = old.lekcia and skolsky_rok = rok;
+  else
+    -- len úprava existujúceho záznamu (záznam zmazaný zo siene slávy sa neobnoví)
+    update public.rekordy_lekcii
+    set body = r.body, rychlost = r.rychlost, presnost = r.presnost
+    where ziak_id = old.ziak_id and lekcia = old.lekcia and skolsky_rok = rok;
+  end if;
+  return null;
+end;
+$$;
+
+revoke execute on function public.po_zmazani_vysledku() from public, anon, authenticated;
+
+drop trigger if exists prepocet_siene_slavy on public.vysledky;
+create trigger prepocet_siene_slavy
+  after delete on public.vysledky
+  for each row execute function public.po_zmazani_vysledku();
+
+-- 6) Uloženie výsledku: rovnaké ako vo faza9.sql, navyše zápis rekordu pri lekcii
 create or replace function public.uloz_vysledok(
   p_kod            text,
   p_text_zaciatok  text,
@@ -166,7 +242,7 @@ begin
 end;
 $$;
 
--- 5) Rebríček pre žiaka po novom aj s rekordom lekcie (sieň slávy):
+-- 7) Rebríček pre žiaka po novom aj s rekordom lekcie (sieň slávy):
 --    "rekord": { "meno": "Dano F.", "trieda": "9.A", "rok": "2025/26", "body": 45.2 }
 --    Inak rovnaký ako vo faza11.sql.
 create or replace function public.rebricek_lekcie(p_kod text, p_lekcia int)
@@ -235,7 +311,7 @@ begin
 end;
 $$;
 
--- 6) Doterajšie výsledky: zapíšeme rekordy, ktoré už žiaci majú (do tohto školského roka)
+-- 8) Doterajšie výsledky: zapíšeme rekordy, ktoré už žiaci majú (v tomto školskom roku)
 select public.zapis_rekord_lekcie(r.ziak_id, l)
 from generate_series(1, 18) l
 cross join lateral public.rating_lekcie(l) r;

@@ -410,8 +410,9 @@ function vykresliVysledkyZiaka(vysledky) {
 }
 
 async function zmazVysledok(v) {
+  const lekcia = v.druh === "lekcia" ? "\nPri lekcii sa prepočíta aj rebríček a sieň slávy žiaka." : "";
   if (!confirm(`Zmazať výsledok z ${formatujDatum(v.datum)} (${v.rychlost} slov/min)?\n` +
-               "Štatistika klávesov žiaka ostane bez zmeny.")) return;
+               "Štatistika klávesov žiaka ostane bez zmeny." + lekcia)) return;
 
   const { error } = await db.from("vysledky").delete().eq("id", v.id);
   if (error) return ukazHlasku(popisChyby(error), true);

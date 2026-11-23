@@ -142,9 +142,10 @@ function vykresliSienSlavy() {
 }
 
 async function zmazRekord(r) {
-  if (!confirm(`Zmazať záznam ${r.meno} (${r.trieda}, ${r.skolsky_rok}, rating ${formatujBody(r.body)}) zo siene slávy?
-` +
-               "Hodí sa, ak niekto písal za spolužiaka. Výsledky žiaka ostanú, toto sa nedá vrátiť.")) return;
+  if (!confirm(`Zmazať záznam ${r.meno} (${r.trieda}, ${r.skolsky_rok}, rating ${formatujBody(r.body)}) zo siene slávy?\n\n` +
+               "Výsledky žiaka ostanú. Ak žiak v tejto lekcii ešte niečo napíše, záznam sa vytvorí znova " +
+               "zo všetkých jeho výsledkov tohto školského roka. Pri podvode preto radšej zmaž podvodné výsledky " +
+               "v Triedy → žiak → Všetky výsledky, záznam sa potom prepočíta sám.")) return;
   const { error } = await db.from("rekordy_lekcii").delete().eq("id", r.id);
   if (error) return ukazHlasku(popisChyby(error), true);
   ukazHlasku("Záznam bol zo siene slávy zmazaný.");
