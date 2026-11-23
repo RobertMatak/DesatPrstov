@@ -711,3 +711,49 @@ tr.rekord-riadok td {
   box-shadow: 0 0 0 3px #f2b01e;
   font-weight: bold;
 }
+
+/* ===== Rebríček lekcie ===== */
+.rebricek-lekcie { margin-top: 28px; }
+.rebricek-lekcie h2 { margin-bottom: 4px; }
+
+.rebricek-tabulky {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  max-width: 820px;
+}
+
+.rebricek {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  font-size: 15px;
+}
+
+.rebricek thead tr:first-child th {
+  background: #222;
+  color: white;
+  text-align: center;
+  padding: 8px;
+  font-size: 15px;
+}
+
+.rebricek .stlpce th {
+  font-size: 12px;
+  color: #777;
+  font-weight: normal;
+  padding: 6px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.rebricek td {
+  padding: 8px 10px;
+  text-align: center;
+  border-bottom: 1px solid #f0eee8;
+}
+
+.rebricek tr.ty td { background: #fdf6dc; font-weight: bold; }
+.rebricek-tabulky .prvy { margin: 6px 0 0; font-weight: bold; color: #2a8a3e; }

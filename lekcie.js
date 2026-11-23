@@ -190,9 +190,112 @@ function ukazLekciu(cislo) {
   });
 
   ukazObrazovku("lekcia");
+  nacitajRebricek(cislo);
 }
 
 podlaId("spatNaLekcie").addEventListener("click", ukazLekcie);
+
+
+// ===== Rebríček lekcie =====
+// Žiak vidí len svoje miesto v triede a v škole a jedného žiaka tesne pred sebou.
+// Rating = priemer najlepších bodov z cvičení lekcie, body = rýchlosť × presnosť³
+// (počíta ich databáza, funkcia rebricek_lekcie vo faza11.sql).
+let lekciaRebricka = null; // ktorej lekcie rebríček práve čakáme (ak žiak medzitým odíde, odpoveď zahodíme)
+
+// 31.1 → "31,1"
+const formatujBody = (n) => Number(n).toLocaleString("sk-SK", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+async function nacitajRebricek(cislo) {
+  const sekcia = podlaId("rebricekLekcie");
+  const popis = podlaId("popisRebricka");
+  podlaId("rebricekTrieda").innerHTML = "";
+  podlaId("rebricekSkola").innerHTML = "";
+  sekcia.classList.remove("skryty");
+  lekciaRebricka = cislo;
+
+  if (stavLekcie(cislo) === "opakovanie") {
+    popis.textContent = "Táto lekcia je na opakovanie, do rebríčka sa nepočíta. V rebríčku sú lekcie na tento rok.";
+    return;
+  }
+  popis.textContent = "Načítavam rebríček…";
+
+  const { data, error } = await db.rpc("rebricek_lekcie", { p_kod: kodZiaka, p_lekcia: cislo }); // kodZiaka je v ziak.js
+  if (lekciaRebricka !== cislo) return; // žiak medzitým otvoril inú lekciu
+  if (error || !data) {
+    sekcia.classList.add("skryty"); // napr. databáza ešte bez rebríčkov
+    return;
+  }
+
+  let text = "Rating = priemer najlepších bodov z každého cvičenia. Body = rýchlosť × presnosť³, " +
+    "takže presnosť znamená viac ako rýchlosť.";
+  if (!data.ja) {
+    text = "Zatiaľ nemáš v tejto lekcii body. Napíš cvičenia a uvidíš, na ktorom si mieste. " + text;
+  } else if (data.ja.cviceni < data.pocet_cviceni) {
+    text = `Máš napísané ${data.ja.cviceni} z ${data.pocet_cviceni} cvičení. ` +
+      "Nenapísané cvičenie má 0 bodov, oplatí sa spraviť všetky. " + text;
+  }
+  popis.textContent = text;
+  if (!data.ja) return;
+
+  vykresliRebricek(podlaId("rebricekTrieda"), data.trieda.nazov, data.trieda, data.ja);
+  vykresliRebricek(podlaId("rebricekSkola"), "Škola", data.skola, data.ja);
+}
+
+// Tabuľka: nadpis (trieda alebo Škola), žiak pred tebou a ty
+//  |              6.D                |
+//  | Umiestnenie | Meno | Rating | Chýba |
+//  |     6.      | Jano S. | 33,0 | -1,9 |
+//  |     7.      |   TY    | 31,1 |  ---  |
+function vykresliRebricek(obal, nadpis, rebricek, ja) {
+  const tabulka = document.createElement("table");
+  tabulka.className = "rebricek";
+
+  const riadok = (bunky, trieda) => {
+    const tr = document.createElement("tr");
+    if (trieda) tr.className = trieda;
+    for (const obsah of bunky) {
+      const td = document.createElement("td");
+      td.textContent = obsah;
+      tr.appendChild(td);
+    }
+    return tr;
+  };
+
+  const hlava = document.createElement("thead");
+  const nadpisTr = document.createElement("tr");
+  const th = document.createElement("th");
+  th.colSpan = 4;
+  th.textContent = `${nadpis} · ${rebricek.pocet} ${rebricek.pocet === 1 ? "žiak" : rebricek.pocet <= 4 ? "žiaci" : "žiakov"} v rebríčku`;
+  nadpisTr.appendChild(th);
+  const stlpce = document.createElement("tr");
+  stlpce.className = "stlpce";
+  for (const nazov of ["Umiestnenie", "Meno", "Rating", "Chýba"]) {
+    const t = document.createElement("th");
+    t.textContent = nazov;
+    stlpce.appendChild(t);
+  }
+  hlava.append(nadpisTr, stlpce);
+
+  const telo = document.createElement("tbody");
+  if (rebricek.pred) {
+    telo.appendChild(riadok([
+      rebricek.pred.miesto + ".",
+      rebricek.pred.meno,
+      formatujBody(rebricek.pred.body),
+      "-" + formatujBody(Math.round((rebricek.pred.body - ja.body) * 10) / 10), // zaokrúhlenie kvôli desatinným číslam v počítači
+    ]));
+  }
+  telo.appendChild(riadok([rebricek.miesto + ".", "TY", formatujBody(ja.body), "---"], "ty"));
+  tabulka.append(hlava, telo);
+  obal.appendChild(tabulka);
+
+  if (rebricek.miesto === 1) {
+    const prvy = document.createElement("p");
+    prvy.className = "prvy";
+    prvy.textContent = "🥇 Si na prvom mieste!";
+    obal.appendChild(prvy);
+  }
+}
 
 
 // ===== Písanie cvičenia =====

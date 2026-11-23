@@ -85,6 +85,7 @@ async function zobrazPodlaPrihlasenia() {
     await nacitajTexty();  // texty-admin.js
     await nacitajKnihy();  // knihy-admin.js
     await nacitajTriedy();
+    if (spomen("sekcia") === "rebricky") await nacitajRebricek(); // rebricky-admin.js
   }
 }
 
@@ -111,7 +112,9 @@ $("odhlasit").addEventListener("click", async () => {
   triedy = [];
   ziaci = [];
   vybranaTrieda = null;
-  for (const kluc of ["sekcia", "trieda", "zalozka", "ziak", "kniha", "filterTextov"]) zapamataj(kluc, null);
+  for (const kluc of ["sekcia", "trieda", "zalozka", "ziak", "kniha", "filterTextov", "lekciaRebricka", "rozsahRebricka"]) {
+    zapamataj(kluc, null);
+  }
   await zobrazPodlaPrihlasenia();
 });
 
@@ -255,7 +258,7 @@ async function vykresliDetail() {
 }
 
 // ===== Hlavné časti stránky: Triedy / Náhodné texty / Knihy =====
-const SEKCIE = ["triedy", "texty", "knihy", "nastavenia"];
+const SEKCIE = ["triedy", "texty", "knihy", "rebricky", "nastavenia"];
 
 function prepniSekciu(nazov) {
   if (!SEKCIE.includes(nazov)) nazov = "triedy";
@@ -274,6 +277,7 @@ for (const t of document.querySelectorAll(".hlavne-zalozky button")) {
     // Po návrate k triedam obnovíme výsledky: medzitým mohli pribudnúť
     // nové výsledky žiakov alebo kapitoly v knihách (postup v knihách)
     if (t.dataset.sekcia === "triedy" && vybranaTrieda) nacitajVysledkyTriedy(); // vysledky-admin.js
+    if (t.dataset.sekcia === "rebricky") nacitajRebricek(); // rebricky-admin.js: vždy čerstvé body
   });
 }
 
@@ -420,6 +424,7 @@ $("tlacitKarticky").addEventListener("click", () => {
 
   const karticky = $("karticky");
   karticky.innerHTML = "";
+  $("tlacRebricka").innerHTML = ""; // pri tlači kartičiek netlačiť rebríček
   for (const ziak of aktivni) {
     const k = document.createElement("div");
     k.className = "karticka";

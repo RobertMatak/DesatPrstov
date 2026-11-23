@@ -43,6 +43,7 @@
         <button data-sekcia="triedy" class="aktivny">Triedy</button>
         <button data-sekcia="texty">Náhodné texty</button>
         <button data-sekcia="knihy">Knihy</button>
+        <button data-sekcia="rebricky">🏆 Rebríčky</button>
       </div>
       <div class="prepinac">
         <button data-sekcia="nastavenia">⚙️ Nastavenia</button>
@@ -254,6 +255,35 @@
       </section>
     </main>
 
+    <!-- ===== Časť Rebríčky (riadi rebricky-admin.js) ===== -->
+    <main id="sekcia-rebricky" class="jeden-stlpec skryty">
+      <section class="karta">
+        <div class="nadpis-triedy">
+          <h2>Rebríčky lekcií</h2>
+          <button id="tlacitRebricek">🖨 Vytlačiť</button>
+        </div>
+        <p class="sivy">Rating žiaka v lekcii = priemer najlepších bodov z každého cvičenia (nenapísané cvičenie má 0). Body = rýchlosť × presnosť³, takže presnosť rozhoduje viac ako rýchlosť. V rebríčku sú aktívni žiaci, ktorí majú lekciu v rozsahu svojho ročníka (⚙️ Nastavenia).</p>
+        <div class="volby-rebricka">
+          <label>Lekcia <select id="lekciaRebricka"></select></label>
+          <label>Kto <select id="rozsahRebricka"></select></label>
+          <label>Zobraziť
+            <select id="pocetRebricka">
+              <option value="0">všetkých</option>
+              <option value="10">prvých 10</option>
+              <option value="3">prvých 3</option>
+            </select>
+          </label>
+        </div>
+        <table id="tabulkaRebricka" class="rebricek-ucitel">
+          <thead>
+            <tr><th>Miesto</th><th>Meno</th><th>Trieda</th><th>Rating</th><th>Slov/min</th><th>Presnosť</th><th>Cvičení</th></tr>
+          </thead>
+          <tbody id="rebricekRiadky"></tbody>
+        </table>
+        <p id="ziadnyRebricek" class="sivy skryty"></p>
+      </section>
+    </main>
+
     <!-- ===== Časť Nastavenia (riadi dlzky-admin.js) ===== -->
     <main id="sekcia-nastavenia" class="jeden-stlpec skryty">
       <section class="karta">
@@ -312,8 +342,9 @@
     </main>
   </div>
 
-  <!-- ===== Kartičky na tlač (na obrazovke sú skryté) ===== -->
+  <!-- ===== Kartičky a rebríček na tlač (na obrazovke sú skryté) ===== -->
   <div id="karticky" class="karticky"></div>
+  <div id="tlacRebricka" class="tlac-rebricka"></div>
 
   <!-- Poradie je dôležité: knižnice → nastavenia → spoločný kód s aplikáciou → náš kód -->
   <script src="supabase.js"></script>
@@ -327,6 +358,7 @@
   <script src="lekcie-obsah.js"></script>   <!-- lekcie: počet cvičení a hviezdy (rovnaké ako u žiakov) -->
   <script src="vysledky-admin.js"></script>
   <script src="lekcie-admin.js"></script>   <!-- lekcie v prehľade triedy -->
+  <script src="rebricky-admin.js"></script> <!-- rebríčky lekcií a ich tlač -->
   <script src="texty-admin.js"></script>
   <script src="dlzky-admin.js"></script>
   <script src="knihy-admin.js"></script>
