@@ -255,7 +255,7 @@ async function vykresliDetail() {
 }
 
 // ===== Hlavné časti stránky: Triedy / Náhodné texty / Knihy =====
-const SEKCIE = ["triedy", "texty", "knihy"];
+const SEKCIE = ["triedy", "texty", "knihy", "nastavenia"];
 
 function prepniSekciu(nazov) {
   if (!SEKCIE.includes(nazov)) nazov = "triedy";

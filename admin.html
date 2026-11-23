@@ -44,6 +44,9 @@
         <button data-sekcia="texty">Náhodné texty</button>
         <button data-sekcia="knihy">Knihy</button>
       </div>
+      <div class="prepinac">
+        <button data-sekcia="nastavenia">⚙️ Nastavenia</button>
+      </div>
     </nav>
 
     <!-- ===== Časť Triedy ===== -->
@@ -193,17 +196,7 @@
     </main>
 
     <!-- ===== Časť Náhodné texty (riadi texty-admin.js) ===== -->
-    <main id="sekcia-texty" class="rozlozenie skryty">
-      <div class="lavy-stlpec">
-        <!-- Dĺžky úryvkov podľa ročníkov (riadi dlzky-admin.js) -->
-        <section class="karta">
-          <h2>Nastavenia ročníkov</h2>
-          <p class="sivy"><b>Slov:</b> približný počet slov, ktorý žiak napíše naraz. <b>Presnosť:</b> koľko % potrebuje na postup v knihe a na splnenie cvičenia v lekcii. <b>Lekcie od–do:</b> lekcie na tento rok; nižšie má otvorené na opakovanie, vyššie zamknuté (0–0 = žiadne). Platí pre všetky triedy ročníka.</p>
-          <div id="dlzkyRocnikov" class="dlzky-mriezka"></div>
-          <button id="ulozitDlzky">Uložiť nastavenia</button>
-        </section>
-      </div>
-
+    <main id="sekcia-texty" class="jeden-stlpec skryty">
       <section class="karta">
         <div class="nadpis-triedy">
           <h2>Náhodné texty <span id="pocetTextov" class="sivy"></span></h2>
@@ -253,13 +246,23 @@
       </section>
     </main>
 
+    <!-- ===== Časť Nastavenia (riadi dlzky-admin.js) ===== -->
+    <main id="sekcia-nastavenia" class="jeden-stlpec skryty">
+      <section class="karta">
+        <h2>Nastavenia ročníkov</h2>
+        <p class="sivy">Platia pre všetky tvoje triedy daného ročníka. Žiaci ich dostanú pri ďalšom prihlásení alebo obnovení stránky.</p>
+        <div id="dlzkyRocnikov" class="dlzky-mriezka"></div>
+        <button id="ulozitDlzky">Uložiť nastavenia</button>
+      </section>
+    </main>
+
     <!-- ===== Časť Knihy (riadi knihy-admin.js) ===== -->
     <main id="sekcia-knihy" class="jeden-stlpec skryty">
       <section class="karta">
         <h2>Knihy</h2>
         <!-- Zoznam kníh -->
         <div id="zoznamKnihPohlad">
-          <p class="sivy">Knihy žiaci píšu v časti <b>Príbehy</b>, kapitolu po kapitole. Do náhodných textov sa nedostanú, musia si ich „vypísať“. Každá kniha je pre všetky tvoje triedy. Potrebnú presnosť pre ročníky nastavíš v časti <b>Náhodné texty</b> → Nastavenia ročníkov.</p>
+          <p class="sivy">Knihy žiaci píšu v časti <b>Príbehy</b>, kapitolu po kapitole. Do náhodných textov sa nedostanú, musia si ich „vypísať“. Každá kniha je pre všetky tvoje triedy. Potrebnú presnosť pre ročníky nastavíš v časti <b>⚙️ Nastavenia</b>.</p>
           <ul id="zoznamKnih" class="zoznam-textov"></ul>
           <p id="ziadneKnihy" class="sivy skryty">Zatiaľ žiadne knihy.</p>
 

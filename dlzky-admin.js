@@ -59,11 +59,20 @@ function vykresliDlzky() {
   const mriezka = $("dlzkyRocnikov");
   mriezka.innerHTML = "";
 
-  // Hlavička tabuľky
-  for (const text of ["Ročník", "Slov", "Presnosť", "Lekcie od–do"]) {
+  // Hlavička tabuľky: názov stĺpca a pod ním krátke vysvetlenie
+  for (const [nazov, popis] of [
+    ["Ročník", ""],
+    ["Slov", "koľko slov žiak napíše naraz"],
+    ["Presnosť", "potrebná na postup v knihe a na splnenie cvičenia v lekcii"],
+    ["Lekcie od–do", "lekcie na tento rok; nižšie sú na opakovanie, vyššie zamknuté; 0–0 = žiadne"],
+  ]) {
     const bunka = document.createElement("span");
     bunka.className = "dlzky-hlavicka";
-    bunka.textContent = text;
+    const b = document.createElement("b");
+    b.textContent = nazov;
+    const vysvetlenie = document.createElement("small");
+    vysvetlenie.textContent = popis;
+    bunka.append(b, vysvetlenie);
     mriezka.appendChild(bunka);
   }
 

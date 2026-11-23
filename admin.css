@@ -103,6 +103,10 @@ button:disabled { opacity: 0.5; cursor: wait; }
 .hlavne-zalozky {
   max-width: 1100px;
   margin: 0 auto 16px;
+  display: flex;
+  justify-content: space-between; /* Nastavenia vpravo, oddelené od ostatných */
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .hlavne-zalozky .prepinac { margin-bottom: 0; }
@@ -541,9 +545,18 @@ select {
 #pridatText:disabled { cursor: not-allowed; }
 #chybaRocnika { margin-left: 8px; }
 
-/* Nastavenia ročníkov majú štyri stĺpce: ľavý stĺpec časti Náhodné texty je širší */
-#sekcia-texty { grid-template-columns: 370px 1fr; }
+/* ===== Nastavenia ročníkov ===== */
+#sekcia-nastavenia .dlzky-mriezka {
+  grid-template-columns: 70px 200px 240px 280px;
+  gap: 8px 20px;
+  align-items: center;
+}
+
+.dlzky-hlavicka { align-self: end; }
+.dlzky-hlavicka b { display: block; color: #222; font-size: 14px; }
+.dlzky-hlavicka small { display: block; color: #888; font-size: 12px; line-height: 1.3; margin-top: 2px; }
+
 .dlzky-mriezka .pole-lekcie-od,
-.dlzky-mriezka .pole-lekcie-do { width: 46px; }
+.dlzky-mriezka .pole-lekcie-do { width: 56px; }
 .dlzky-mriezka .pole-slov,
-.dlzky-mriezka .pole-presnost { width: 56px; }
+.dlzky-mriezka .pole-presnost { width: 64px; }
