@@ -131,17 +131,21 @@ function koniec() {
     const klavesy = ulozStatistikuKlavesov(); // chyby.js: štatistika z tohto textu
     ulozVysledok({                              // vysledky.js: do pamäte a na server
       datum: new Date().toISOString(),
-      text: aktualnyText.split(" ").slice(0, 3).join(" ") + "…",
+      text: aktualneCvicenie                    // lekcie.js
+        ? `Lekcia ${aktualneCvicenie.lekcia}, cvičenie ${aktualneCvicenie.cvicenie}`
+        : aktualnyText.split(" ").slice(0, 3).join(" ") + "…",
       rychlost: staty.rychlost,                 // slov za minútu
       presnost: staty.presnost,
       chyby: pocetChyb,
       sekundy: Math.round(staty.sekundy),
-      druh: aktualnaKapitola ? "kniha" : "nahodne",           // kniznica.js
+      druh: aktualneCvicenie ? "lekcia" : aktualnaKapitola ? "kniha" : "nahodne", // lekcie.js, kniznica.js
       kapitola_id: aktualnaKapitola ? aktualnaKapitola.id : null,
+      lekcia: aktualneCvicenie ? aktualneCvicenie.lekcia : null,
+      cvicenie: aktualneCvicenie ? aktualneCvicenie.cvicenie : null,
     }, klavesy);
     vykresliVysledky();
   }
-  poDopisaniUryvku(staty.presnost); // kniznica.js: postup v kapitole (ak bola presnosť dosť vysoká)
+  poDopisaniUryvku(staty.presnost); // kniznica.js: postup v kapitole alebo hviezdy v lekcii
 
   vysledokEl.classList.remove("skryty");
 }

@@ -76,6 +76,9 @@ async function nacitajUdajeZiaka(ajPostup) {
     slovNaUryvok = data.slov;
     if (data.presnost) potrebnaPresnost = data.presnost;
     nastavKnihy(data.knihy || [], ajPostup ? data.postup : null); // kniznica.js
+    if (data.lekcie_do !== undefined) {
+      nastavLekcie(data.lekcie_od, data.lekcie_do, ajPostup ? data.postup_lekcii : null); // lekcie.js
+    }
   } else if (error) {
     // Databáza ešte bez novších úprav: aspoň náhodné texty po starom
     const stare = await db.rpc("texty_pre_ziaka", { p_kod: kodZiaka });
@@ -89,10 +92,13 @@ async function nacitajUdajeZiaka(ajPostup) {
 function dalsiText() {
   document.getElementById("spravaKapitoly").textContent = "";
   document.getElementById("dalsi").textContent = "Ďalší text (Enter)";
-  document.getElementById("obrazovka-pisanie").classList.toggle("rezim-kniha", aktualnaKapitola !== null);
-  // Pri knihách ukážeme vedľa presnosti aj to, koľko treba
-  document.getElementById("cielPresnosti").textContent = aktualnaKapitola ? ` (potrebné ${potrebnaPresnost} %)` : "";
+  // V knihách a lekciách rozhoduje presnosť: zvýrazníme ju a ukážeme, koľko treba
+  const ideOPresnost = aktualnaKapitola !== null || aktualneCvicenie !== null; // kniznica.js, lekcie.js
+  document.getElementById("obrazovka-pisanie").classList.toggle("rezim-kniha", ideOPresnost);
+  document.getElementById("cielPresnosti").textContent = ideOPresnost ? ` (potrebné ${potrebnaPresnost} %)` : "";
 
+  if (aktualneCvicenie) return dalsiTextLekcie(); // lekcie.js
+  zvyrazniNoveKlavesy(null); // mimo lekcie žiadne zvýraznené klávesy
   if (aktualnaKapitola) return dalsiUryvokKapitoly(); // kniznica.js
 
   // Náhodné texty: náhodný začiatok vety v náhodnom texte

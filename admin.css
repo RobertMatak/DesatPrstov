@@ -373,7 +373,7 @@ select {
 
 .dlzky-mriezka {
   display: grid;
-  grid-template-columns: auto 1fr 1fr;
+  grid-template-columns: auto auto auto auto;
   gap: 6px 12px;
   align-items: center;
   margin: 12px 0 14px;
@@ -540,3 +540,10 @@ select {
 
 #pridatText:disabled { cursor: not-allowed; }
 #chybaRocnika { margin-left: 8px; }
+
+/* Nastavenia ročníkov majú štyri stĺpce: ľavý stĺpec časti Náhodné texty je širší */
+#sekcia-texty { grid-template-columns: 370px 1fr; }
+.dlzky-mriezka .pole-lekcie-od,
+.dlzky-mriezka .pole-lekcie-do { width: 46px; }
+.dlzky-mriezka .pole-slov,
+.dlzky-mriezka .pole-presnost { width: 56px; }

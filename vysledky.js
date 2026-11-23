@@ -48,8 +48,10 @@ async function odosliNaServer(polozka) {
     p_chyby: v.chyby,
     p_sekundy: v.sekundy,
     p_klavesy: polozka.klavesy,
-    p_druh: v.druh || "nahodne",        // náhodný text alebo kniha
+    p_druh: v.druh || "nahodne",        // náhodný text, kniha alebo lekcia
     p_kapitola_id: v.kapitola_id || null,
+    p_lekcia: v.lekcia || null,
+    p_cvicenie: v.cvicenie || null,
   });
   return !error;
 }

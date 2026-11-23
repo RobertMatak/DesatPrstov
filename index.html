@@ -26,6 +26,7 @@
     <aside class="menu">
       <div class="menu-logo">Desať Prstov</div>
       <nav class="menu-polozky">
+        <button data-menu="lekcie">⌨️ Lekcie</button>
         <button data-menu="nahodne" class="aktivny">✏️ Náhodné texty</button>
         <button data-menu="pribehy">📚 Príbehy</button>
         <button data-menu="vysledky">📈 Moje výsledky</button>
@@ -120,6 +121,23 @@
         <ol id="zoznamKapitol" class="zoznam-kapitol"></ol>
       </section>
 
+      <!-- ===== Obrazovka: mapa lekcií (riadi lekcie.js) ===== -->
+      <section id="obrazovka-lekcie" class="skryty">
+        <h1>Lekcie</h1>
+        <p id="popisLekcii" class="navod"></p>
+        <div id="mapaLekcii" class="mapa-lekcii"></div>
+      </section>
+
+      <!-- ===== Obrazovka: jedna lekcia a jej cvičenia ===== -->
+      <section id="obrazovka-lekcia" class="skryty">
+        <button id="spatNaLekcie" class="druhotne">← Všetky lekcie</button>
+        <h1 id="nadpisLekcie"></h1>
+        <div id="hviezdyLekcie" class="hviezdy-lekcie"></div>
+        <p id="tipLekcie" class="tip-lekcie"></p>
+        <div id="klavesnicaLekcie" class="klavesnica mala"></div>
+        <ol id="zoznamCviceni" class="zoznam-kapitol"></ol>
+      </section>
+
       <!-- ===== Obrazovka: moje výsledky (vykreslí ich vysledky.js) ===== -->
       <section id="obrazovka-vysledky" class="skryty">
         <section class="moje-vysledky">
@@ -175,6 +193,8 @@
   <script src="script.js"></script>
   <script src="pribehy.js"></script>          <!-- úryvky a náhodné texty -->
   <script src="kniznica.js"></script>         <!-- menu, knižnica, kapitoly -->
+  <script src="lekcie-obsah.js"></script>     <!-- 18 lekcií: klávesy, slová, vety, hviezdy -->
+  <script src="lekcie.js"></script>           <!-- mapa lekcií a cvičenia -->
   <script src="ziak.js"></script>             <!-- prihlásenie žiaka, spúšťa aplikáciu -->
 </body>
 </html>

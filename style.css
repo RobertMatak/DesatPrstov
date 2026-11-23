@@ -630,3 +630,84 @@ tr.rekord-riadok td {
 
 .presnost-ok { color: #2a8a3e; }
 .presnost-malo { color: #d9443b; }
+
+/* ===== Lekcie ===== */
+.mapa-lekcii {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.dlazdica-lekcie {
+  background: white;
+  color: #222;
+  margin: 0;
+  padding: 14px 12px 12px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.dlazdica-lekcie:not(:disabled):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.dlazdica-lekcie .cislo { font-size: 28px; font-weight: 800; line-height: 1; }
+.dlazdica-lekcie .klavesy { font-size: 14px; font-weight: bold; color: #444; text-align: center; }
+.dlazdica-lekcie .stitok { font-size: 12px; color: #888; }
+
+/* Lekcie na tento rok sú výraznejšie, zamknuté vyblednuté */
+.dlazdica-lekcie.tento-rok { border-color: #c3e6b8; }
+.dlazdica-lekcie.tento-rok .stitok { color: #2a8a3e; font-weight: bold; }
+.dlazdica-lekcie.hotova { background: #f3faf1; }
+.dlazdica-lekcie.zamknuta { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+/* Päť hviezd: sivé v pozadí, zlaté navrchu orezané podľa počtu (aj polovička) */
+.hviezdy {
+  position: relative;
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: #ddd9cf;
+  white-space: nowrap;
+  vertical-align: -2px;
+}
+
+.hviezdy::before { content: "★★★★★"; }
+
+.hviezdy .plne {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  color: #f2b01e;
+}
+
+.hviezdy .plne::before { content: "★★★★★"; }
+
+.hviezdy-lekcie { margin: -6px 0 10px; color: #2a8a3e; font-weight: bold; }
+.hviezdy-lekcie .hviezdy { font-size: 24px; margin-right: 6px; }
+.sprava-pribehu .hviezdy { font-size: 22px; }
+
+.tip-lekcie {
+  background: #fdf6dc;
+  border-radius: 10px;
+  padding: 12px 16px;
+  max-width: 760px;
+}
+
+#klavesnicaLekcie { max-width: 640px; margin: 16px 0 22px; }
+
+/* Nové klávesy lekcie: zlatý rámik */
+.klaves.nova {
+  box-shadow: 0 0 0 3px #f2b01e;
+  font-weight: bold;
+}

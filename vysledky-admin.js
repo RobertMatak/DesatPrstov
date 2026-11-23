@@ -47,7 +47,7 @@ async function nacitajVysledkyTriedy() {
     try {
       const riadky = await nacitajVsetko(() => db
         .from("vysledky")
-        .select("id, ziak_id, datum, text_zaciatok, rychlost, presnost, chyby, sekundy, druh, kapitola_id")
+        .select("id, ziak_id, datum, text_zaciatok, rychlost, presnost, chyby, sekundy, druh, kapitola_id, lekcia, cvicenie")
         .in("ziak_id", idZiakov)
         .order("datum")
         .order("id"));
@@ -383,7 +383,8 @@ function vykresliVysledkyZiaka(vysledky) {
 
   for (const v of [...vysledky].reverse()) { // najnovší hore
     const tr = document.createElement("tr");
-    const druh = v.druh === "kniha" ? "📚 " + popisKapitoly(v.kapitola_id) : "náhodný";
+    const druh = v.druh === "kniha" ? "📚 " + popisKapitoly(v.kapitola_id)
+      : v.druh === "lekcia" ? `⌨️ Lekcia ${v.lekcia}, cv. ${v.cvicenie}` : "náhodný";
     for (const obsah of [
       formatujDatum(v.datum), druh, v.text, v.rychlost, v.presnost + " %", v.chyby, formatujCas(v.sekundy),
     ]) {
