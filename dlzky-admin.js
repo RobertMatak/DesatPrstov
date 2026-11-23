@@ -55,38 +55,52 @@ function vytvorPole(hodnota, min, max, trieda) {
   return pole;
 }
 
+// Tabuľka: hlavička (názov stĺpca a pod ním krátke vysvetlenie) a riadok pre každý ročník
 function vykresliDlzky() {
-  const mriezka = $("dlzkyRocnikov");
-  mriezka.innerHTML = "";
+  const kontajner = $("dlzkyRocnikov");
+  kontajner.innerHTML = "";
+  const tabulka = document.createElement("table");
+  tabulka.className = "nastavenia-rocnikov";
 
-  // Hlavička tabuľky: názov stĺpca a pod ním krátke vysvetlenie
+  const hlavicka = document.createElement("tr");
   for (const [nazov, popis] of [
     ["Ročník", ""],
     ["Slov", "koľko slov žiak napíše naraz"],
     ["Presnosť", "potrebná na postup v knihe a na splnenie cvičenia v lekcii"],
     ["Lekcie od–do", "lekcie na tento rok; nižšie sú na opakovanie, vyššie zamknuté; 0–0 = žiadne"],
   ]) {
-    const bunka = document.createElement("span");
-    bunka.className = "dlzky-hlavicka";
+    const th = document.createElement("th");
     const b = document.createElement("b");
     b.textContent = nazov;
     const vysvetlenie = document.createElement("small");
     vysvetlenie.textContent = popis;
-    bunka.append(b, vysvetlenie);
-    mriezka.appendChild(bunka);
+    th.append(b, vysvetlenie);
+    hlavicka.appendChild(th);
   }
+  const thead = document.createElement("thead");
+  thead.appendChild(hlavicka);
+  const tbody = document.createElement("tbody");
+
+  // Pomôcka: bunka <td> s obsahom
+  const bunka = (...obsah) => {
+    const td = document.createElement("td");
+    td.append(...obsah);
+    return td;
+  };
 
   for (let i = 0; i < 9; i++) {
-    const rocnik = document.createElement("span");
-    rocnik.textContent = `${i + 1}.`;
-    const presnost = document.createElement("label");
-    presnost.append(vytvorPole(presnosti[i], MIN_PRESNOST, MAX_PRESNOST, "pole-presnost"), " %");
-    const lekcie = document.createElement("label");
-    lekcie.append(
-      vytvorPole(lekcieOd[i], 0, MAX_LEKCIA, "pole-lekcie-od"), "–",
-      vytvorPole(lekcieDo[i], 0, MAX_LEKCIA, "pole-lekcie-do"));
-    mriezka.append(rocnik, vytvorPole(dlzky[i], MIN_SLOV, MAX_SLOV, "pole-slov"), presnost, lekcie);
+    const tr = document.createElement("tr");
+    tr.append(
+      bunka(`${i + 1}.`),
+      bunka(vytvorPole(dlzky[i], MIN_SLOV, MAX_SLOV, "pole-slov")),
+      bunka(vytvorPole(presnosti[i], MIN_PRESNOST, MAX_PRESNOST, "pole-presnost"), " %"),
+      bunka(vytvorPole(lekcieOd[i], 0, MAX_LEKCIA, "pole-lekcie-od"), " – ",
+            vytvorPole(lekcieDo[i], 0, MAX_LEKCIA, "pole-lekcie-do")),
+    );
+    tbody.appendChild(tr);
   }
+  tabulka.append(thead, tbody);
+  kontajner.appendChild(tabulka);
 }
 
 // Potrebná presnosť pre vybranú triedu (používa aj vysledky-admin.js)
