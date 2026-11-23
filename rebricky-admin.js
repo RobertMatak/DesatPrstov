@@ -5,6 +5,8 @@
 // ktorí majú lekciu v rozsahu „od–do“ svojho ročníka (⚙️ Nastavenia).
 
 let ratingLekcie = [];   // [{ ziak_id, trieda_id, meno, body, rychlost, presnost, cviceni }]
+let rekordyLekcie = [];  // sieň slávy: [{ id, meno, trieda, skolsky_rok, body, rychlost, presnost }]
+let rezimRebricka = spomen("rezimRebricka") || "rok"; // "rok" = aktuálny rebríček, "slava" = sieň slávy
 let lekciaRebricka = Number(spomen("lekciaRebricka")) || 0; // admin.js; 0 = ešte nevybraná
 
 // 31.1 → "31,1"
@@ -52,11 +54,27 @@ function vyplnRozsah() {
   vyber.value = [...vyber.options].some((o) => o.value === predtym) ? predtym : "skola";
 }
 
-// Načíta rating pre vybranú lekciu (volá sa pri otvorení časti Rebríčky a pri zmene lekcie)
+// Načíta rebríček pre vybranú lekciu (volá sa pri otvorení časti Rebríčky a pri zmene lekcie)
 async function nacitajRebricek() {
   vyplnLekcie();
   vyplnRozsah();
+  nastavRezim(rezimRebricka);
   lekciaRebricka = Number($("lekciaRebricka").value);
+
+  if (rezimRebricka === "slava") {
+    // Sieň slávy: učiteľovi pravidlá v databáze ukážu rekordy žiakov jeho tried
+    const { data, error } = await db.from("rekordy_lekcii")
+      .select("id, meno, trieda, skolsky_rok, body, rychlost, presnost, datum")
+      .eq("lekcia", lekciaRebricka)
+      .order("body", { ascending: false })
+      .order("datum");
+    rekordyLekcie = error ? [] : data;
+    if (error) ukazHlasku(error.code === "42P01" || error.code === "PGRST205"
+      ? "V databáze ešte chýba sieň slávy: spusti v Supabase súbor faza11b.sql."
+      : popisChyby(error), true);
+    return vykresliSienSlavy();
+  }
+
   const { data, error } = await db.rpc("rating_lekcie", { p_lekcia: lekciaRebricka });
   if (error) {
     ratingLekcie = [];
@@ -67,6 +85,70 @@ async function nacitajRebricek() {
   }
   ratingLekcie = data;
   vykresliRebricek();
+}
+
+// Prepínač Aktuálny rebríček / Sieň slávy
+function nastavRezim(rezim) {
+  rezimRebricka = rezim;
+  for (const b of document.querySelectorAll("#rezimRebricka button")) {
+    b.classList.toggle("aktivny", b.dataset.rezim === rezim);
+  }
+  const slava = rezim === "slava";
+  $("popisSlavy").classList.toggle("skryty", !slava);
+  $("rozsahRebrickaObal").classList.toggle("skryty", slava); // v sieni slávy sú triedy z minulých rokov
+  $("tabulkaRebricka").classList.add("skryty");
+  $("tabulkaSlavy").classList.add("skryty");
+}
+
+for (const b of document.querySelectorAll("#rezimRebricka button")) {
+  b.addEventListener("click", () => {
+    zapamataj("rezimRebricka", b.dataset.rezim);
+    rezimRebricka = b.dataset.rezim;
+    nacitajRebricek();
+  });
+}
+
+// Sieň slávy: všetky záznamy lekcie, prvý je rekord
+function vykresliSienSlavy() {
+  const pocet = Number($("pocetRebricka").value);
+  const riadky = rekordyLekcie.map((r) => ({ ...r, body: Number(r.body) }));
+  riadky.forEach((r, i) => {
+    r.miesto = i > 0 && riadky[i - 1].body === r.body ? riadky[i - 1].miesto : i + 1;
+  });
+  const zobrazene = pocet > 0 ? riadky.filter((r) => r.miesto <= pocet) : riadky;
+
+  const telo = $("slavaRiadky");
+  telo.innerHTML = "";
+  for (const r of zobrazene) {
+    const tr = document.createElement("tr");
+    if (r.miesto <= 3) tr.classList.add("miesto-" + r.miesto);
+    for (const obsah of [
+      r.miesto + ".", r.meno, r.trieda, r.skolsky_rok, formatujBody(r.body),
+      r.rychlost ?? "–", r.presnost === null ? "–" : r.presnost + " %",
+    ]) {
+      const td = document.createElement("td");
+      td.textContent = obsah;
+      tr.appendChild(td);
+    }
+    const akcie = document.createElement("td");
+    akcie.className = "akcie netlacit";
+    akcie.appendChild(tlacidlo("Zmazať", "nebezpecne", () => zmazRekord(r))); // tlacidlo je z admin.js
+    tr.appendChild(akcie);
+    telo.appendChild(tr);
+  }
+  $("ziadnyRebricek").textContent = "V sieni slávy tejto lekcie zatiaľ nikto nie je.";
+  $("ziadnyRebricek").classList.toggle("skryty", zobrazene.length > 0);
+  $("tabulkaSlavy").classList.toggle("skryty", zobrazene.length === 0);
+}
+
+async function zmazRekord(r) {
+  if (!confirm(`Zmazať záznam ${r.meno} (${r.trieda}, ${r.skolsky_rok}, rating ${formatujBody(r.body)}) zo siene slávy?
+` +
+               "Hodí sa, ak niekto písal za spolužiaka. Výsledky žiaka ostanú, toto sa nedá vrátiť.")) return;
+  const { error } = await db.from("rekordy_lekcii").delete().eq("id", r.id);
+  if (error) return ukazHlasku(popisChyby(error), true);
+  ukazHlasku("Záznam bol zo siene slávy zmazaný.");
+  await nacitajRebricek();
 }
 
 // Žiaci podľa vybraného rozsahu, zoradení, s miestom (rovnaký rating = rovnaké miesto)
@@ -121,6 +203,7 @@ function vykresliRebricek() {
 // Nadpis rebríčka, napr. „Lekcia 9: O P – 5. ročník“
 function nadpisRebricka() {
   const l = LEKCIE[lekciaRebricka - 1];
+  if (rezimRebricka === "slava") return `Lekcia ${l.cislo}: ${l.nazov} – Sieň slávy`;
   const rozsah = $("rozsahRebricka");
   return `Lekcia ${l.cislo}: ${l.nazov} – ${rozsah.options[rozsah.selectedIndex].text}`;
 }
@@ -134,11 +217,15 @@ $("rozsahRebricka").addEventListener("change", () => {
   zapamataj("rozsahRebricka", $("rozsahRebricka").value);
   vykresliRebricek();
 });
-$("pocetRebricka").addEventListener("change", vykresliRebricek);
+$("pocetRebricka").addEventListener("change", () => {
+  if (rezimRebricka === "slava") vykresliSienSlavy();
+  else vykresliRebricek();
+});
 
 // ----- Tlač: len nadpis a tabuľka (kartičky žiakov sa pri tom vyprázdnia) -----
 $("tlacitRebricek").addEventListener("click", () => {
-  if (riadkyRebricka().length === 0) return ukazHlasku("Rebríček je prázdny, nie je čo tlačiť.", true);
+  const tabulka = rezimRebricka === "slava" ? $("tabulkaSlavy") : $("tabulkaRebricka");
+  if (tabulka.classList.contains("skryty")) return ukazHlasku("Rebríček je prázdny, nie je čo tlačiť.", true);
   const tlac = $("tlacRebricka");
   tlac.innerHTML = "";
   $("karticky").innerHTML = "";
@@ -148,6 +235,9 @@ $("tlacitRebricek").addEventListener("click", () => {
   const popis = document.createElement("p");
   popis.textContent = `Desať Prstov · ${new Date().toLocaleDateString("sk-SK")} · ` +
     "rating = priemer najlepších bodov z cvičení, body = rýchlosť × presnosť³";
-  tlac.append(nadpis, popis, $("tabulkaRebricka").cloneNode(true));
+  const kopia = tabulka.cloneNode(true);
+  kopia.classList.remove("skryty");
+  kopia.querySelectorAll(".netlacit").forEach((el) => el.remove()); // bez tlačidiel Zmazať
+  tlac.append(nadpis, popis, kopia);
   window.print();
 });

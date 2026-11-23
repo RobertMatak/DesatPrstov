@@ -263,9 +263,14 @@
           <button id="tlacitRebricek">🖨 Vytlačiť</button>
         </div>
         <p class="sivy">Rating žiaka v lekcii = priemer najlepších bodov z každého cvičenia (nenapísané cvičenie má 0). Body = rýchlosť × presnosť³, takže presnosť rozhoduje viac ako rýchlosť. V rebríčku sú aktívni žiaci, ktorí majú lekciu v rozsahu svojho ročníka (⚙️ Nastavenia).</p>
+        <div class="prepinac" id="rezimRebricka">
+          <button data-rezim="rok" class="aktivny">Aktuálny rebríček</button>
+          <button data-rezim="slava">🏆 Sieň slávy</button>
+        </div>
+        <p id="popisSlavy" class="sivy skryty">Najlepší rating každého žiaka v lekcii za každý školský rok, keď ju mal v rozsahu svojho ročníka. Ostáva aj po odchode žiaka zo školy. Žiaci pri lekcii vidia len rekord (1. miesto) z celej školy. Ak niekto písal za spolužiaka, jeho záznam môžeš zmazať.</p>
         <div class="volby-rebricka">
           <label>Lekcia <select id="lekciaRebricka"></select></label>
-          <label>Kto <select id="rozsahRebricka"></select></label>
+          <label id="rozsahRebrickaObal">Kto <select id="rozsahRebricka"></select></label>
           <label>Zobraziť
             <select id="pocetRebricka">
               <option value="0">všetkých</option>
@@ -279,6 +284,12 @@
             <tr><th>Miesto</th><th>Meno</th><th>Trieda</th><th>Rating</th><th>Slov/min</th><th>Presnosť</th><th>Cvičení</th></tr>
           </thead>
           <tbody id="rebricekRiadky"></tbody>
+        </table>
+        <table id="tabulkaSlavy" class="rebricek-ucitel skryty">
+          <thead>
+            <tr><th>Miesto</th><th>Meno</th><th>Trieda</th><th>Školský rok</th><th>Rating</th><th>Slov/min</th><th>Presnosť</th><th class="netlacit"></th></tr>
+          </thead>
+          <tbody id="slavaRiadky"></tbody>
         </table>
         <p id="ziadnyRebricek" class="sivy skryty"></p>
       </section>

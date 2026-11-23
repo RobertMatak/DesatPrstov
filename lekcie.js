@@ -210,19 +210,21 @@ async function nacitajRebricek(cislo) {
   const popis = podlaId("popisRebricka");
   podlaId("rebricekTrieda").innerHTML = "";
   podlaId("rebricekSkola").innerHTML = "";
+  podlaId("rebricekRekord").innerHTML = "";
   sekcia.classList.remove("skryty");
   lekciaRebricka = cislo;
-
-  if (stavLekcie(cislo) === "opakovanie") {
-    popis.textContent = "Táto lekcia je na opakovanie, do rebríčka sa nepočíta. V rebríčku sú lekcie na tento rok.";
-    return;
-  }
   popis.textContent = "Načítavam rebríček…";
 
   const { data, error } = await db.rpc("rebricek_lekcie", { p_kod: kodZiaka, p_lekcia: cislo }); // kodZiaka je v ziak.js
   if (lekciaRebricka !== cislo) return; // žiak medzitým otvoril inú lekciu
   if (error || !data) {
     sekcia.classList.add("skryty"); // napr. databáza ešte bez rebríčkov
+    return;
+  }
+  if (data.rekord !== undefined) vykresliRekord(data.rekord); // sieň slávy (faza11b.sql)
+
+  if (stavLekcie(cislo) === "opakovanie") {
+    popis.textContent = "Táto lekcia je na opakovanie, do rebríčka sa nepočíta. V rebríčku sú lekcie na tento rok.";
     return;
   }
 
@@ -239,6 +241,33 @@ async function nacitajRebricek(cislo) {
 
   vykresliRebricek(podlaId("rebricekTrieda"), data.trieda.nazov, data.trieda, data.ja);
   vykresliRebricek(podlaId("rebricekSkola"), "Škola", data.skola, data.ja);
+}
+
+// Sieň slávy: rekord lekcie všetkých čias (aj od žiakov, ktorí už zo školy odišli)
+function vykresliRekord(rekord) {
+  const obal = podlaId("rebricekRekord");
+  const tabulka = document.createElement("table");
+  tabulka.className = "rebricek rekord";
+  const hlava = document.createElement("thead");
+  hlava.innerHTML = '<tr><th colspan="4">🏆 Sieň slávy · rekord lekcie všetkých čias</th></tr>' +
+    '<tr class="stlpce"><th>Meno</th><th>Trieda</th><th>Školský rok</th><th>Rating</th></tr>';
+  const telo = document.createElement("tbody");
+  const tr = document.createElement("tr");
+  const bunky = rekord
+    ? [rekord.meno, rekord.trieda, rekord.rok, formatujBody(rekord.body)]
+    : ["Rekord zatiaľ nikto nemá. Môžeš byť prvý!", "", "", ""];
+  for (const obsah of bunky) {
+    const td = document.createElement("td");
+    td.textContent = obsah;
+    tr.appendChild(td);
+  }
+  if (!rekord) {
+    tr.firstChild.colSpan = 4;
+    while (tr.children.length > 1) tr.lastChild.remove();
+  }
+  telo.appendChild(tr);
+  tabulka.append(hlava, telo);
+  obal.appendChild(tabulka);
 }
 
 // Tabuľka: nadpis (trieda alebo Škola), žiak pred tebou a ty

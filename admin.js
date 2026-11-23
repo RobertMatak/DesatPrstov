@@ -112,7 +112,7 @@ $("odhlasit").addEventListener("click", async () => {
   triedy = [];
   ziaci = [];
   vybranaTrieda = null;
-  for (const kluc of ["sekcia", "trieda", "zalozka", "ziak", "kniha", "filterTextov", "lekciaRebricka", "rozsahRebricka"]) {
+  for (const kluc of ["sekcia", "trieda", "zalozka", "ziak", "kniha", "filterTextov", "lekciaRebricka", "rozsahRebricka", "rezimRebricka"]) {
     zapamataj(kluc, null);
   }
   await zobrazPodlaPrihlasenia();
