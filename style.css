@@ -762,3 +762,18 @@ tr.rekord-riadok td {
 .rebricek-rekord { max-width: 820px; margin: 12px 0 20px; }
 .rebricek.rekord thead tr:first-child th { background: #f2b01e; color: #222; }
 .rebricek.rekord tbody td { font-weight: bold; font-size: 16px; }
+
+/* ===== Test rýchlosti ===== */
+/* Dlhý text: vidno 3 riadky, posúva sa s písaním (test.js) */
+.rezim-test .text {
+  position: relative;
+  height: calc(3 * 1.6em);   /* presne 3 riadky */
+  overflow: hidden;
+  padding-top: 0;            /* okraj hore a dole robí rámik, aby sa riadky neorezávali */
+  padding-bottom: 0;
+  border-top: 20px solid white;
+  border-bottom: 20px solid white;
+}
+
+.rezim-test #zivyCas { font-size: 20px; color: #b3261e; }
+#zacatTest { font-size: 18px; padding: 12px 28px; margin: 6px 0 4px; }

@@ -293,12 +293,14 @@ function vykresliSuhrnDruhov(vysledky) {
     { nazov: "Náhodné texty", druh: "nahodne" },
     { nazov: "Knihy", druh: "kniha" },
     { nazov: "Lekcie", druh: "lekcia" },
+    { nazov: "Test rýchlosti", druh: "test" },
   ];
   for (const d of druhy) {
     const v = vysledky.filter((r) => (r.druh || "nahodne") === d.druh);
     const z = zhrnutie(v); // vysledky.js
+    const hranica = d.druh === "test" ? 80 : potrebna; // test: pokus sa ráta pri presnosti aspoň 80 % (faza12.sql)
     const uspesne = d.druh !== "nahodne"
-      ? `${v.filter((r) => r.presnost >= potrebna).length} z ${v.length} (aspoň ${potrebna} %)`
+      ? `${v.filter((r) => r.presnost >= hranica).length} z ${v.length} (aspoň ${hranica} %)`
       : "–";
     const tr = document.createElement("tr");
     for (const obsah of [d.nazov, v.length, z ? z.priemer : "–", z ? z.priemernaPresnost + " %" : "–", uspesne]) {
@@ -390,7 +392,8 @@ function vykresliVysledkyZiaka(vysledky) {
   for (const v of [...vysledky].reverse()) { // najnovší hore
     const tr = document.createElement("tr");
     const druh = v.druh === "kniha" ? "📚 " + popisKapitoly(v.kapitola_id)
-      : v.druh === "lekcia" ? `⌨️ Lekcia ${v.lekcia}, cv. ${v.cvicenie}` : "náhodný";
+      : v.druh === "lekcia" ? `⌨️ Lekcia ${v.lekcia}, cv. ${v.cvicenie}`
+      : v.druh === "test" ? "⏱️ Test rýchlosti" : "náhodný";
     // Pri lekcii je namiesto začiatku textu názov cvičenia (napr. „Spolu so staršími“)
     const cvicenie = v.druh === "lekcia" && v.lekcia >= 1 && v.lekcia <= POCET_LEKCII
       ? cviceniaLekcie(v.lekcia)[v.cvicenie - 1] : null; // lekcie-obsah.js

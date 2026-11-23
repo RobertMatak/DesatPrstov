@@ -27,6 +27,7 @@
       <div class="menu-logo">Desať Prstov</div>
       <nav class="menu-polozky">
         <button data-menu="lekcie">⌨️ Lekcie</button>
+        <button data-menu="test">⏱️ Test rýchlosti</button>
         <button data-menu="nahodne" class="aktivny">✏️ Náhodné texty</button>
         <button data-menu="pribehy">📚 Príbehy</button>
         <button data-menu="vysledky">📈 Moje výsledky</button>
@@ -149,6 +150,20 @@
         </section>
       </section>
 
+      <!-- ===== Obrazovka: test rýchlosti (riadi test.js) ===== -->
+      <section id="obrazovka-test" class="skryty">
+        <h1 id="nadpisTestu">Test rýchlosti</h1>
+        <p id="popisTestu" class="navod"></p>
+        <button id="zacatTest" class="skryty">Začať test</button>
+        <section class="rebricek-lekcie">
+          <div id="rekordTestu" class="rebricek-rekord"></div>
+          <div class="rebricek-tabulky">
+            <div id="rebricekTestuTrieda" class="navod"></div>
+            <div id="rebricekTestuSkola"></div>
+          </div>
+        </section>
+      </section>
+
       <!-- ===== Obrazovka: moje výsledky (vykreslí ich vysledky.js) ===== -->
       <section id="obrazovka-vysledky" class="skryty">
         <section class="moje-vysledky">
@@ -206,6 +221,7 @@
   <script src="kniznica.js"></script>         <!-- menu, knižnica, kapitoly -->
   <script src="lekcie-obsah.js"></script>     <!-- 18 lekcií: klávesy, slová, vety, hviezdy -->
   <script src="lekcie.js"></script>           <!-- mapa lekcií a cvičenia -->
+  <script src="test.js"></script>             <!-- test rýchlosti -->
   <script src="ziak.js"></script>             <!-- prihlásenie žiaka, spúšťa aplikáciu -->
 </body>
 </html>

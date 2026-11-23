@@ -82,6 +82,7 @@ async function zobrazPodlaPrihlasenia() {
     prepniSekciu(spomen("sekcia") || "triedy");     // časť stránky pred obnovením (F5)
     prepniZalozku(spomen("zalozka") || "vysledky"); // záložka triedy pred obnovením
     await nacitajDlzky();  // dlzky-admin.js
+    await nacitajTesty();  // testy-admin.js
     await nacitajTexty();  // texty-admin.js
     await nacitajKnihy();  // knihy-admin.js
     await nacitajTriedy();
@@ -112,7 +113,7 @@ $("odhlasit").addEventListener("click", async () => {
   triedy = [];
   ziaci = [];
   vybranaTrieda = null;
-  for (const kluc of ["sekcia", "trieda", "zalozka", "ziak", "kniha", "filterTextov", "lekciaRebricka", "rozsahRebricka", "rezimRebricka"]) {
+  for (const kluc of ["sekcia", "trieda", "zalozka", "ziak", "kniha", "filterTextov", "lekciaRebricka", "rozsahRebricka", "rezimRebricka", "druhRebricka", "testRebricka"]) {
     zapamataj(kluc, null);
   }
   await zobrazPodlaPrihlasenia();

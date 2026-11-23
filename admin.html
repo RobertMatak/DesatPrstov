@@ -259,17 +259,24 @@
     <main id="sekcia-rebricky" class="jeden-stlpec skryty">
       <section class="karta">
         <div class="nadpis-triedy">
-          <h2>Rebríčky lekcií</h2>
+          <h2>Rebríčky</h2>
           <button id="tlacitRebricek">🖨 Vytlačiť</button>
         </div>
-        <p class="sivy">Rating žiaka v lekcii = priemer najlepších bodov z každého cvičenia (nenapísané cvičenie má 0). Body = rýchlosť × presnosť³, takže presnosť rozhoduje viac ako rýchlosť. V rebríčku sú aktívni žiaci, ktorí majú lekciu v rozsahu svojho ročníka (⚙️ Nastavenia).</p>
-        <div class="prepinac" id="rezimRebricka">
-          <button data-rezim="rok" class="aktivny">Aktuálny rebríček</button>
-          <button data-rezim="slava">🏆 Sieň slávy</button>
-        </div>
-        <p id="popisSlavy" class="sivy skryty">Najlepší rating každého žiaka v lekcii za každý školský rok, keď ju mal v rozsahu svojho ročníka. Ostáva aj po odchode žiaka zo školy. Žiaci pri lekcii vidia len rekord (1. miesto) z celej školy. Ak niekto písal za spolužiaka, zmaž jeho podvodné výsledky (Triedy → žiak → Všetky výsledky) a záznam sa tu sám prepočíta. Tlačidlo Zmazať je na výnimočné prípady.</p>
+        <!-- Čo: lekcie alebo test rýchlosti; ako: aktuálny rebríček alebo sieň slávy -->
         <div class="volby-rebricka">
-          <label>Lekcia <select id="lekciaRebricka"></select></label>
+          <div class="prepinac" id="druhRebricka">
+            <button data-druh="lekcie" class="aktivny">⌨️ Lekcie</button>
+            <button data-druh="test">⏱️ Test rýchlosti</button>
+          </div>
+          <div class="prepinac" id="rezimRebricka">
+            <button data-rezim="rok" class="aktivny">Aktuálny rebríček</button>
+            <button data-rezim="slava">🏆 Sieň slávy</button>
+          </div>
+        </div>
+        <p id="popisRebricka" class="sivy"></p>
+        <div class="volby-rebricka">
+          <label id="lekciaRebrickaObal">Lekcia <select id="lekciaRebricka"></select></label>
+          <label id="testRebrickaObal">Test <select id="testRebricka"></select></label>
           <label id="rozsahRebrickaObal">Kto <select id="rozsahRebricka"></select></label>
           <label>Zobraziť
             <select id="pocetRebricka">
@@ -279,17 +286,10 @@
             </select>
           </label>
         </div>
+        <!-- Stĺpce tabuľky sa menia podľa toho, čo je vybrané (rebricky-admin.js) -->
         <table id="tabulkaRebricka" class="rebricek-ucitel">
-          <thead>
-            <tr><th>Miesto</th><th>Meno</th><th>Trieda</th><th>Rating</th><th>Slov/min</th><th>Presnosť</th><th>Cvičení</th></tr>
-          </thead>
+          <thead id="hlavickaRebricka"></thead>
           <tbody id="rebricekRiadky"></tbody>
-        </table>
-        <table id="tabulkaSlavy" class="rebricek-ucitel skryty">
-          <thead>
-            <tr><th>Miesto</th><th>Meno</th><th>Trieda</th><th>Školský rok</th><th>Rating</th><th>Slov/min</th><th>Presnosť</th><th class="netlacit"></th></tr>
-          </thead>
-          <tbody id="slavaRiadky"></tbody>
         </table>
         <p id="ziadnyRebricek" class="sivy skryty"></p>
       </section>
@@ -302,6 +302,30 @@
         <p class="sivy">Platia pre všetky tvoje triedy daného ročníka. Žiaci ich dostanú pri ďalšom prihlásení alebo obnovení stránky.</p>
         <div id="dlzkyRocnikov" class="dlzky-mriezka"></div>
         <button id="ulozitDlzky">Uložiť nastavenia</button>
+      </section>
+
+      <!-- Test rýchlosti (riadi testy-admin.js) -->
+      <section class="karta">
+        <div class="nadpis-triedy">
+          <h2>Test rýchlosti</h2>
+          <button id="novyTestTlacidlo">+ Nový test</button>
+        </div>
+        <p class="sivy">Všetci žiaci školy píšu ten istý text 1 minútu, koľkokrát chcú; ráta sa najlepší pokus s presnosťou aspoň 80 %. Žiaci ho vidia v čase od–do. Ak by sa obdobia testov prekrývali, beží novší.</p>
+        <ul id="zoznamTestov" class="zoznam-textov"></ul>
+        <p id="ziadneTesty" class="sivy skryty">Zatiaľ nemáš žiadny test.</p>
+
+        <div id="formularTestu" class="formular skryty">
+          <h3 id="nadpisFormularaTestu">Nový test</h3>
+          <div class="volby-testu">
+            <label>Názov <input id="nazovTestu" maxlength="60" placeholder="2026/27"></label>
+            <label>Od <input id="odTestu" type="date"></label>
+            <label>Do <input id="doTestu" type="date"></label>
+          </div>
+          <textarea id="textTestu" rows="8" placeholder="Text testu: aspoň 150 slov, aby ho ani najrýchlejší žiaci nedopísali skôr ako za minútu…"></textarea>
+          <p id="pocetSlovTestu" class="sivy"></p>
+          <button id="ulozitTest">Uložiť test</button>
+          <button id="zrusitTest" class="druhotne">Zrušiť</button>
+        </div>
       </section>
     </main>
 
@@ -369,7 +393,8 @@
   <script src="lekcie-obsah.js"></script>   <!-- lekcie: počet cvičení a hviezdy (rovnaké ako u žiakov) -->
   <script src="vysledky-admin.js"></script>
   <script src="lekcie-admin.js"></script>   <!-- lekcie v prehľade triedy -->
-  <script src="rebricky-admin.js"></script> <!-- rebríčky lekcií a ich tlač -->
+  <script src="rebricky-admin.js"></script> <!-- rebríčky lekcií a testu, sieň slávy, tlač -->
+  <script src="testy-admin.js"></script>    <!-- test rýchlosti v Nastaveniach -->
   <script src="texty-admin.js"></script>
   <script src="dlzky-admin.js"></script>
   <script src="knihy-admin.js"></script>

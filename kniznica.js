@@ -97,12 +97,13 @@ function vytvorPruh(percent) {
 
 // ===== Obrazovky a menu =====
 function ukazObrazovku(nazov) {
-  for (const o of ["pisanie", "kniznica", "kniha", "lekcie", "lekcia", "vysledky"]) {
+  for (const o of ["pisanie", "kniznica", "kniha", "lekcie", "lekcia", "test", "vysledky"]) {
     podlaId("obrazovka-" + o).classList.toggle("skryty", o !== nazov);
   }
   // Ktorá položka menu svieti: písanie kapitoly a kniha patria k Príbehom,
   // písanie cvičenia a lekcia k Lekciám (aktualneCvicenie je v lekcie.js)
   const menu = nazov === "vysledky" ? "vysledky"
+    : nazov === "test" || (nazov === "pisanie" && aktualnyTest) ? "test" // test.js
     : nazov === "lekcie" || nazov === "lekcia" || (nazov === "pisanie" && aktualneCvicenie) ? "lekcie"
     : nazov === "pisanie" && !aktualnaKapitola ? "nahodne" : "pribehy";
   for (const b of document.querySelectorAll(".menu-polozky button")) {
@@ -122,12 +123,15 @@ for (const b of document.querySelectorAll(".menu-polozky button")) {
     if (b.dataset.menu === "nahodne") {
       aktualnaKapitola = null;
       aktualneCvicenie = null; // lekcie.js
+      aktualnyTest = null;     // test.js
       ukazObrazovku("pisanie");
       dalsiText(); // pribehy.js
     } else if (b.dataset.menu === "pribehy") {
       ukazKniznicu();
     } else if (b.dataset.menu === "lekcie") {
       ukazLekcie(); // lekcie.js
+    } else if (b.dataset.menu === "test") {
+      ukazTest();   // test.js
     } else {
       ukazObrazovku("vysledky");
     }
@@ -147,6 +151,7 @@ function nastavHlavickuPisania(nadpis, podnadpis, sipkaSpat, textSipky = "← Ka
 // ===== Knižnica =====
 function ukazKniznicu() {
   aktualneCvicenie = null; // lekcie.js
+  aktualnyTest = null;     // test.js
   const polica = podlaId("policaKnih");
   polica.innerHTML = "";
   podlaId("ziadneKnihy").classList.toggle("skryty", knihyZiaka.length > 0);
@@ -182,6 +187,7 @@ function ukazKnihu(kniha) {
   aktualnaKniha = kniha;
   aktualnaKapitola = null;
   aktualneCvicenie = null; // lekcie.js
+  aktualnyTest = null;     // test.js
   podlaId("chybaKapitoly").textContent = "";
 
   vytvorObalku(kniha, podlaId("obalkaKnihy"));
@@ -231,7 +237,8 @@ function ukazKnihu(kniha) {
 
 // Tlačidlo späť nad textom: z cvičenia na lekciu, z kapitoly na knihu
 podlaId("spatNaKapitoly").addEventListener("click", () => {
-  if (aktualneCvicenie) ukazLekciu(aktualneCvicenie.lekcia); // lekcie.js
+  if (aktualnyTest) ukazTest();                              // test.js
+  else if (aktualneCvicenie) ukazLekciu(aktualneCvicenie.lekcia); // lekcie.js
   else ukazKnihu(aktualnaKniha);
 });
 
@@ -256,6 +263,7 @@ async function otvorKapitolu(kniha, index) {
   aktualnaKniha = kniha;
   aktualnaKapitola = { ...kap, index };
   aktualneCvicenie = null; // lekcie.js
+  aktualnyTest = null;     // test.js
   ukazObrazovku("pisanie");
   dalsiText(); // pribehy.js → dalsiUryvokKapitoly()
 }
@@ -305,6 +313,7 @@ function poDopisaniUryvku(presnost) {
   dalsi.textContent = "Ďalší text (Enter)";
   cisloPresnosti.classList.remove("presnost-ok", "presnost-malo");
 
+  if (aktualnyTest) return poDopisaniTestu(presnost);         // test.js
   if (aktualneCvicenie) return poDopisaniCvicenia(presnost); // lekcie.js
 
   if (aktualnaKapitola && aktualnyUryvok) {

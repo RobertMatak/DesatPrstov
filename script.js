@@ -72,7 +72,10 @@ function ukazDalsiKlaves() {
 function spracujZnak(znak) {
   if (hotovo) return;
   if (pozicia >= ZNAKY.length) return; // na konci textu sa čaká na opravu chýb
-  if (zaciatok === null) zaciatok = Date.now();
+  if (zaciatok === null) {
+    zaciatok = Date.now();
+    if (aktualnyTest) spustiOdpocetTestu(); // test.js: po minúte sa písanie zastaví
+  }
 
   const span = textEl.children[pozicia];
   span.classList.remove("aktualny");
@@ -105,12 +108,14 @@ function vratSpat() {
   span.classList.remove("spravne", "chybne");
   span.classList.add("aktualny");
   ukazDalsiKlaves();
+  if (aktualnyTest) posunTextTestu(); // test.js
 }
 
 // Text je dopísaný
 function koniec() {
   hotovo = true;
   koniecCas = Date.now();
+  if (aktualnyTest) koniecCas = Math.min(koniecCas, zaciatok + DLZKA_TESTU * 1000); // test.js: presne 1 minúta
   aktualizujStaty();
 
   const staty = vypocitajStaty();
@@ -131,14 +136,17 @@ function koniec() {
     const klavesy = ulozStatistikuKlavesov(); // chyby.js: štatistika z tohto textu
     ulozVysledok({                              // vysledky.js: do pamäte a na server
       datum: new Date().toISOString(),
-      text: aktualneCvicenie                    // lekcie.js
+      text: aktualnyTest                        // test.js
+        ? `Test rýchlosti ${aktualnyTest.nazov}`
+        : aktualneCvicenie                      // lekcie.js
         ? `Lekcia ${aktualneCvicenie.lekcia}, cvičenie ${aktualneCvicenie.cvicenie}`
         : aktualnyText.split(" ").slice(0, 3).join(" ") + "…",
       rychlost: staty.rychlost,                 // slov za minútu
       presnost: staty.presnost,
       chyby: pocetChyb,
       sekundy: Math.round(staty.sekundy),
-      druh: aktualneCvicenie ? "lekcia" : aktualnaKapitola ? "kniha" : "nahodne", // lekcie.js, kniznica.js
+      druh: aktualnyTest ? "test" : aktualneCvicenie ? "lekcia" : aktualnaKapitola ? "kniha" : "nahodne", // test.js, lekcie.js, kniznica.js
+      test_id: aktualnyTest ? aktualnyTest.id : null,
       kapitola_id: aktualnaKapitola ? aktualnaKapitola.id : null,
       lekcia: aktualneCvicenie ? aktualneCvicenie.lekcia : null,
       cvicenie: aktualneCvicenie ? aktualneCvicenie.cvicenie : null,
@@ -153,7 +161,8 @@ function koniec() {
 // ===== Štatistiky =====
 function vypocitajStaty() {
   const teraz = hotovo ? koniecCas : Date.now();
-  const sekundy = zaciatok === null ? 0 : (teraz - zaciatok) / 1000;
+  let sekundy = zaciatok === null ? 0 : (teraz - zaciatok) / 1000;
+  if (aktualnyTest) sekundy = Math.min(sekundy, DLZKA_TESTU); // test.js: najviac 1 minúta
   const spravne = textEl.querySelectorAll(".spravne").length;
   // Slová za minútu: podľa medzinárodného zvyku sa 1 slovo počíta ako 5 znakov
   // (vrátane medzier), aby sa dali porovnať texty s krátkymi aj dlhými slovami.
@@ -176,7 +185,10 @@ function aktualizujStaty() {
   document.getElementById("zivaRychlost").textContent = staty.rychlost;
   document.getElementById("zivaPresnost").textContent = staty.presnost;
   document.getElementById("zivaChyby").textContent = pocetChyb;
-  document.getElementById("zivyCas").textContent = formatujCas(staty.sekundy);
+  // V teste ukazujeme, koľko času ostáva (test.js), inak koľko uplynulo
+  document.getElementById("zivyCas").textContent = aktualnyTest
+    ? formatujCas(Math.ceil(DLZKA_TESTU - staty.sekundy))
+    : formatujCas(staty.sekundy);
 }
 
 // Štatistiky sa obnovujú aj vtedy, keď nepíšeš (čas beží ďalej)
@@ -196,6 +208,7 @@ function spracujVstup() {
   mrtvyKlavesStlaceny = false;
   aktualizujStaty();
   ukazDalsiKlaves();
+  if (aktualnyTest) posunTextTestu(); // test.js: dlhý text sa posúva s písaním
 }
 
 vstup.addEventListener("input", (udalost) => {

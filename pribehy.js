@@ -94,9 +94,13 @@ function dalsiText() {
   document.getElementById("dalsi").textContent = "Ďalší text (Enter)";
   // V knihách a lekciách rozhoduje presnosť: zvýrazníme ju a ukážeme, koľko treba
   const ideOPresnost = aktualnaKapitola !== null || aktualneCvicenie !== null; // kniznica.js, lekcie.js
-  document.getElementById("obrazovka-pisanie").classList.toggle("rezim-kniha", ideOPresnost);
-  document.getElementById("cielPresnosti").textContent = ideOPresnost ? ` (potrebné ${potrebnaPresnost} %)` : "";
+  const obrazovka = document.getElementById("obrazovka-pisanie");
+  obrazovka.classList.toggle("rezim-kniha", ideOPresnost);
+  obrazovka.classList.toggle("rezim-test", aktualnyTest !== null); // test.js: dlhý text, odpočet
+  document.getElementById("cielPresnosti").textContent = ideOPresnost ? ` (potrebné ${potrebnaPresnost} %)`
+    : aktualnyTest ? ` (aspoň ${MIN_PRESNOST_TESTU} %)` : "";
 
+  if (aktualnyTest) return dalsiTextTestu();      // test.js
   if (aktualneCvicenie) return dalsiTextLekcie(); // lekcie.js
   zvyrazniNoveKlavesy(null); // mimo lekcie žiadne zvýraznené klávesy
   if (aktualnaKapitola) return dalsiUryvokKapitoly(); // kniznica.js

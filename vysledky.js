@@ -52,6 +52,7 @@ async function odosliNaServer(polozka) {
     p_kapitola_id: v.kapitola_id || null,
     p_lekcia: v.lekcia || null,
     p_cvicenie: v.cvicenie || null,
+    p_test_id: v.test_id || null,       // pri teste rýchlosti
   });
   return !error;
 }

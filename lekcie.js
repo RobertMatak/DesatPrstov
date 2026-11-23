@@ -92,6 +92,7 @@ function zvyrazniNoveKlavesy(cislo, kontajner = document.getElementById("klavesn
 function ukazLekcie() {
   aktualneCvicenie = null;
   aktualnaKapitola = null; // kniznica.js
+  aktualnyTest = null;     // test.js
 
   const popis = podlaId("popisLekcii"); // podlaId je z kniznica.js
   if (lekcieDo === 0) {
@@ -137,6 +138,7 @@ function ukazLekcie() {
 function ukazLekciu(cislo) {
   aktualneCvicenie = null;
   aktualnaKapitola = null;
+  aktualnyTest = null;
   const l = LEKCIE[cislo - 1];
 
   podlaId("nadpisLekcie").textContent = `Lekcia ${cislo}: ${l.nazov}`;
@@ -330,6 +332,7 @@ function vykresliRebricek(obal, nadpis, rebricek, ja) {
 // ===== Písanie cvičenia =====
 function otvorCvicenie(lekcia, cvicenie) {
   aktualnaKapitola = null;
+  aktualnyTest = null; // test.js
   aktualneCvicenie = { lekcia, cvicenie };
   akciaPoCviceni = null;
   ukazObrazovku("pisanie");
