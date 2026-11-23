@@ -152,6 +152,7 @@ function popisKapitoly(idKapitoly) {
 function prehladZiaka(ziak) {
   const v = vysledkyTriedy.filter((r) => r.ziak_id === ziak.id);
   const z = zhrnutie(v); // vysledky.js; null, ak žiak ešte necvičil
+  const lekcie = prehladLekciiZiaka(ziak.id); // lekcie-admin.js
   return {
     ziak,
     meno: ziak.meno,
@@ -160,6 +161,9 @@ function prehladZiaka(ziak) {
     presnost: z ? z.priemernaPresnost : null,
     knihy: percentaVsetkychKnih(ziak.id),
     zaseknuty: zasekolSaNiekde(ziak.id),
+    lekcie: lekcie.hotove,          // počet splnených lekcií na tento rok (null = trieda lekcie nemá)
+    lekciiSpolu: lekcie.pocet,
+    zaseknutyLekcie: lekcie.zaseknuty,
     rekord: z ? z.rekord : null,
     naposledy: v.length > 0 ? v[v.length - 1].datum : null,
   };
@@ -191,6 +195,7 @@ function vykresliPrehlad() {
       r.pocet,
       r.priemer ?? "–",                       // ?? = ak je vľavo null, použi "–"
       r.presnost === null ? "–" : r.presnost + " %",
+      (r.lekcie === null ? "–" : `${r.lekcie} z ${r.lekciiSpolu}`) + (r.zaseknutyLekcie ? " ⚠" : ""),
       r.knihy === null ? "–" : r.knihy + " %" + (r.zaseknuty ? " ⚠" : ""),
       r.rekord ?? "–",
       r.naposledy ? formatujDatum(r.naposledy) : "nikdy",
@@ -262,6 +267,7 @@ function vykresliAnalyzu() {
   }
 
   vykresliSuhrnDruhov(jeZiak ? vysledky : null);
+  vykresliPostupVLekciach(); // lekcie-admin.js
   vykresliPostupVKnihach();
 
   nastavVysledky(vysledky);           // vysledky.js (graf.js si ich berie pri prepnutí)
@@ -275,7 +281,7 @@ function vykresliAnalyzu() {
   if (jeZiak) vykresliVysledkyZiaka(vysledky);
 }
 
-// Súhrn pre žiaka: náhodné texty a knihy zvlášť
+// Súhrn pre žiaka: náhodné texty, knihy a lekcie zvlášť
 function vykresliSuhrnDruhov(vysledky) {
   $("suhrnDruhovKontajner").classList.toggle("skryty", !vysledky || vysledky.length === 0);
   if (!vysledky) return;
@@ -286,12 +292,12 @@ function vykresliSuhrnDruhov(vysledky) {
   const druhy = [
     { nazov: "Náhodné texty", druh: "nahodne" },
     { nazov: "Knihy", druh: "kniha" },
-    // neskôr: { nazov: "Lekcie", druh: "lekcia" },
+    { nazov: "Lekcie", druh: "lekcia" },
   ];
   for (const d of druhy) {
     const v = vysledky.filter((r) => (r.druh || "nahodne") === d.druh);
     const z = zhrnutie(v); // vysledky.js
-    const uspesne = d.druh === "kniha"
+    const uspesne = d.druh !== "nahodne"
       ? `${v.filter((r) => r.presnost >= potrebna).length} z ${v.length} (aspoň ${potrebna} %)`
       : "–";
     const tr = document.createElement("tr");
@@ -385,8 +391,11 @@ function vykresliVysledkyZiaka(vysledky) {
     const tr = document.createElement("tr");
     const druh = v.druh === "kniha" ? "📚 " + popisKapitoly(v.kapitola_id)
       : v.druh === "lekcia" ? `⌨️ Lekcia ${v.lekcia}, cv. ${v.cvicenie}` : "náhodný";
+    // Pri lekcii je namiesto začiatku textu názov cvičenia (napr. „Spolu so staršími“)
+    const cvicenie = v.druh === "lekcia" && v.lekcia >= 1 && v.lekcia <= POCET_LEKCII
+      ? cviceniaLekcie(v.lekcia)[v.cvicenie - 1] : null; // lekcie-obsah.js
     for (const obsah of [
-      formatujDatum(v.datum), druh, v.text, v.rychlost, v.presnost + " %", v.chyby, formatujCas(v.sekundy),
+      formatujDatum(v.datum), druh, cvicenie ? cvicenie.nazov : v.text, v.rychlost, v.presnost + " %", v.chyby, formatujCas(v.sekundy),
     ]) {
       const td = document.createElement("td");
       td.textContent = obsah;

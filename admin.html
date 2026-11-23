@@ -106,6 +106,7 @@
                   <th data-stlpec="pocet">Textov</th>
                   <th data-stlpec="priemer">Slov/min</th>
                   <th data-stlpec="presnost">Presnosť</th>
+                  <th data-stlpec="lekcie" title="Koľko lekcií na tento rok má žiak splnených; ⚠ = niekde sa zasekol">Lekcie</th>
                   <th data-stlpec="knihy" title="Koľko % kníh má žiak dopísaných; ⚠ = niekde sa zasekol">Knihy</th>
                   <th data-stlpec="rekord">Rekord</th>
                   <th data-stlpec="naposledy">Naposledy</th>
@@ -139,6 +140,13 @@
                   </thead>
                   <tbody id="suhrnDruhov"></tbody>
                 </table>
+              </div>
+
+              <!-- Postup v lekciách (žiak aj celá trieda, riadi lekcie-admin.js) -->
+              <div id="postupVLekciachKontajner" class="skryty">
+                <h4>Lekcie</h4>
+                <p id="popisPostupuLekcii" class="sivy"></p>
+                <div id="postupVLekciach" class="posuvne"></div>
               </div>
 
               <!-- Postup v knihách (žiak aj celá trieda) -->
@@ -316,7 +324,9 @@
   <script src="graf.js"></script>        <!-- graf rýchlosti a presnosti -->
   <script src="chyby.js"></script>       <!-- mapa chýb -->
   <script src="admin.js"></script>
+  <script src="lekcie-obsah.js"></script>   <!-- lekcie: počet cvičení a hviezdy (rovnaké ako u žiakov) -->
   <script src="vysledky-admin.js"></script>
+  <script src="lekcie-admin.js"></script>   <!-- lekcie v prehľade triedy -->
   <script src="texty-admin.js"></script>
   <script src="dlzky-admin.js"></script>
   <script src="knihy-admin.js"></script>

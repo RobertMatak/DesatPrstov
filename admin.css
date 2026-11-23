@@ -581,3 +581,37 @@ select {
 .dlzky-mriezka .pole-lekcie-do { width: 56px; }
 .dlzky-mriezka .pole-slov,
 .dlzky-mriezka .pole-presnost { width: 64px; }
+
+/* ===== Lekcie: hviezdičky (rovnaké ako u žiaka) ===== */
+.hviezdy {
+  position: relative;
+  display: inline-block;
+  font-size: 15px;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: #ddd9cf;
+  white-space: nowrap;
+  vertical-align: -2px;
+}
+
+.hviezdy::before { content: "★★★★★"; }
+
+.hviezdy .plne {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  color: #f2b01e;
+}
+
+.hviezdy .plne::before { content: "★★★★★"; }
+
+/* ===== Lekcie žiaka a lekcie triedy ===== */
+.posuvne { overflow-x: auto; }  /* široká tabuľka sa dá posúvať do strany */
+
+.lekcie-ziaka td, .lekcie-triedy td { white-space: nowrap; font-size: 14px; }
+.lekcie-ziaka td small { color: #999; }
+.lekcie-ziaka tr.mimo-rozsahu td { color: #888; }
+.lekcie-triedy th { font-size: 13px; white-space: nowrap; }
+.lekcie-triedy tr.suhrn td { font-weight: bold; color: #555; border-bottom: none; }
+.lekcie-ziaka td.zaseknuty, .lekcie-triedy td.zaseknuty { color: #b3261e; }
