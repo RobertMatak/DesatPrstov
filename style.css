@@ -777,3 +777,41 @@ tr.rekord-riadok td {
 
 .rezim-test #zivyCas { font-size: 20px; color: #b3261e; }
 #zacatTest { font-size: 18px; padding: 12px 28px; margin: 6px 0 4px; }
+
+/* ===== Rekordy ===== */
+#obrazovka-rekordy h2 { margin: 28px 0 8px; }
+.posuvne { overflow-x: auto; }
+
+.tabulka-rekordov {
+  width: 100%;
+  max-width: 980px;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  font-size: 15px;
+}
+
+.tabulka-rekordov th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: normal;
+  color: #777;
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.tabulka-rekordov td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0eee8;
+  white-space: nowrap;
+}
+
+.tabulka-rekordov td:first-child { font-weight: bold; }
+.tabulka-rekordov td small { color: #999; }
+.tabulka-rekordov tr.moj td { background: #fdf3cf; }
+.tabulka-rekordov tr.prazdny td { color: #aaa; }
+.tabulka-rekordov tr.test td { border-top: 2px solid #eee; }
+
+.osobne-rekordy { flex-wrap: wrap; gap: 14px 32px; }

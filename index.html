@@ -30,6 +30,7 @@
         <button data-menu="test">⏱️ Test rýchlosti</button>
         <button data-menu="nahodne" class="aktivny">✏️ Náhodné texty</button>
         <button data-menu="pribehy">📚 Príbehy</button>
+        <button data-menu="rekordy">🏆 Rekordy</button>
         <button data-menu="vysledky">📈 Moje výsledky</button>
       </nav>
       <div class="menu-ziak">
@@ -164,6 +165,19 @@
         </section>
       </section>
 
+      <!-- ===== Obrazovka: rekordy (riadi rekordy.js) ===== -->
+      <section id="obrazovka-rekordy" class="skryty">
+        <h1>Rekordy</h1>
+        <p id="popisRekordov" class="navod"></p>
+        <h2>Tento rok</h2>
+        <div id="rekordyTentoRok"></div>
+        <h2>🏆 Sieň slávy</h2>
+        <p class="navod">Najlepší výkon všetkých čias v celej škole. 👑 = rekord držíš ty.</p>
+        <div id="sienSlavy" class="posuvne"></div>
+        <h2>Moje osobné rekordy</h2>
+        <div id="osobneRekordy" class="vysledok-cisla osobne-rekordy"></div>
+      </section>
+
       <!-- ===== Obrazovka: moje výsledky (vykreslí ich vysledky.js) ===== -->
       <section id="obrazovka-vysledky" class="skryty">
         <section class="moje-vysledky">
@@ -222,6 +236,7 @@
   <script src="lekcie-obsah.js"></script>     <!-- 18 lekcií: klávesy, slová, vety, hviezdy -->
   <script src="lekcie.js"></script>           <!-- mapa lekcií a cvičenia -->
   <script src="test.js"></script>             <!-- test rýchlosti -->
+  <script src="rekordy.js"></script>          <!-- moje rekordy a sieň slávy -->
   <script src="ziak.js"></script>             <!-- prihlásenie žiaka, spúšťa aplikáciu -->
 </body>
 </html>

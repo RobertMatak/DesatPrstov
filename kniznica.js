@@ -132,6 +132,7 @@ function obnovObrazovku() {
     if (miesto.lekcia >= 1 && miesto.lekcia <= POCET_LEKCII && stavLekcie(miesto.lekcia) !== "zamknuta") ukazLekciu(miesto.lekcia);
     else ukazLekcie();
   } else if (miesto.nazov === "test") ukazTest();
+  else if (miesto.nazov === "rekordy") ukazRekordy();
   else if (miesto.nazov === "kniznica") ukazKniznicu();
   else if (miesto.nazov === "kniha") {
     const kniha = knihyZiaka.find((k) => k.id === miesto.kniha);
@@ -145,12 +146,12 @@ function obnovObrazovku() {
 // ===== Obrazovky a menu =====
 function ukazObrazovku(nazov) {
   zapamatajObrazovku(nazov);
-  for (const o of ["pisanie", "kniznica", "kniha", "lekcie", "lekcia", "test", "vysledky"]) {
+  for (const o of ["pisanie", "kniznica", "kniha", "lekcie", "lekcia", "test", "rekordy", "vysledky"]) {
     podlaId("obrazovka-" + o).classList.toggle("skryty", o !== nazov);
   }
   // Ktorá položka menu svieti: písanie kapitoly a kniha patria k Príbehom,
   // písanie cvičenia a lekcia k Lekciám (aktualneCvicenie je v lekcie.js)
-  const menu = nazov === "vysledky" ? "vysledky"
+  const menu = nazov === "vysledky" || nazov === "rekordy" ? nazov
     : nazov === "test" || (nazov === "pisanie" && aktualnyTest) ? "test" // test.js
     : nazov === "lekcie" || nazov === "lekcia" || (nazov === "pisanie" && aktualneCvicenie) ? "lekcie"
     : nazov === "pisanie" && !aktualnaKapitola ? "nahodne" : "pribehy";
@@ -180,6 +181,8 @@ for (const b of document.querySelectorAll(".menu-polozky button")) {
       ukazLekcie(); // lekcie.js
     } else if (b.dataset.menu === "test") {
       ukazTest();   // test.js
+    } else if (b.dataset.menu === "rekordy") {
+      ukazRekordy(); // rekordy.js
     } else {
       ukazObrazovku("vysledky");
     }
