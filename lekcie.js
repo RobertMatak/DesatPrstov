@@ -14,6 +14,7 @@ let lekcieDo = 0;          // posledná prístupná lekcia
 let postupLekcii = {};     // "6-2" → najlepšia presnosť v lekcii 6, cvičení 2
 let aktualneCvicenie = null; // { lekcia, cvicenie } práve písané cvičenie, inak null
 let akciaPoCviceni = null;   // čo urobí Enter po dopísaní: "dalsie", "lekcia" alebo null (znova)
+let otvorenaLekcia = null;   // číslo lekcie na obrazovke lekcie (na zapamätanie po F5)
 
 const kluc = (lekcia, cvicenie) => `${lekcia}-${cvicenie}`;
 
@@ -139,6 +140,7 @@ function ukazLekciu(cislo) {
   aktualneCvicenie = null;
   aktualnaKapitola = null;
   aktualnyTest = null;
+  otvorenaLekcia = cislo;
   const l = LEKCIE[cislo - 1];
 
   podlaId("nadpisLekcie").textContent = `Lekcia ${cislo}: ${l.nazov}`;

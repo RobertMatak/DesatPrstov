@@ -95,8 +95,56 @@ function vytvorPruh(percent) {
 }
 
 
+// ===== Zapamätanie obrazovky (aby po obnovení stránky F5 žiak ostal na mieste) =====
+// sessionStorage platí len pre túto kartu prehliadača a po jej zatvorení sa vymaže.
+// Uprostred písania si pamätáme o krok späť (lekciu, knihu, úvod testu):
+// rozpísaný text sa po F5 obnoviť nedá a pri teste by to nebolo spravodlivé.
+const KLUC_OBRAZOVKA = "desatPrstov.obrazovka";
+
+function zapamatajObrazovku(nazov) {
+  let miesto = { nazov };
+  if (nazov === "pisanie") {
+    miesto = aktualnyTest ? { nazov: "test" }                                        // test.js
+      : aktualneCvicenie ? { nazov: "lekcia", lekcia: aktualneCvicenie.lekcia }     // lekcie.js
+      : aktualnaKapitola && aktualnaKniha ? { nazov: "kniha", kniha: aktualnaKniha.id }
+      : { nazov: "nahodne" };
+  } else if (nazov === "lekcia") {
+    miesto.lekcia = otvorenaLekcia;                                                 // lekcie.js
+  } else if (nazov === "kniha" && aktualnaKniha) {
+    miesto.kniha = aktualnaKniha.id;
+  }
+  try {
+    sessionStorage.setItem(KLUC_OBRAZOVKA, JSON.stringify({ ...miesto, kod: kodZiaka })); // kodZiaka je v ziak.js
+  } catch (chyba) {}
+}
+
+// Po prihlásení (volá script.js): otvorí zapamätanú obrazovku. Vráti false, ak nič nie je.
+function obnovObrazovku() {
+  let miesto = null;
+  try {
+    miesto = JSON.parse(sessionStorage.getItem(KLUC_OBRAZOVKA));
+  } catch (chyba) {}
+  if (!miesto || miesto.kod !== kodZiaka || miesto.nazov === "nahodne" || miesto.nazov === "pisanie") return false;
+
+  if (miesto.nazov === "lekcie") ukazLekcie();
+  else if (miesto.nazov === "lekcia") {
+    // lekcia mohla medzitým zmiznúť z rozsahu (učiteľ zmenil nastavenia)
+    if (miesto.lekcia >= 1 && miesto.lekcia <= POCET_LEKCII && stavLekcie(miesto.lekcia) !== "zamknuta") ukazLekciu(miesto.lekcia);
+    else ukazLekcie();
+  } else if (miesto.nazov === "test") ukazTest();
+  else if (miesto.nazov === "kniznica") ukazKniznicu();
+  else if (miesto.nazov === "kniha") {
+    const kniha = knihyZiaka.find((k) => k.id === miesto.kniha);
+    if (kniha) ukazKnihu(kniha);
+    else ukazKniznicu();
+  } else if (miesto.nazov === "vysledky") ukazObrazovku("vysledky");
+  else return false;
+  return true;
+}
+
 // ===== Obrazovky a menu =====
 function ukazObrazovku(nazov) {
+  zapamatajObrazovku(nazov);
   for (const o of ["pisanie", "kniznica", "kniha", "lekcie", "lekcia", "test", "vysledky"]) {
     podlaId("obrazovka-" + o).classList.toggle("skryty", o !== nazov);
   }

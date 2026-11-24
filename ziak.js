@@ -68,6 +68,7 @@ document.getElementById("prihlasenieForm").addEventListener("submit", async (uda
 document.getElementById("odhlasitZiaka").addEventListener("click", () => {
   try {
     localStorage.removeItem(KLUC_KOD);
+    sessionStorage.removeItem(KLUC_OBRAZOVKA); // kniznica.js: ďalší žiak začne odznova
   } catch (chyba) {}
   location.reload(); // načíta stránku odznova, bez prihlásenia
 });

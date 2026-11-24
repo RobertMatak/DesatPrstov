@@ -255,6 +255,7 @@ document.getElementById("zopakovat").addEventListener("click", zacniCvicenie);
 // Aplikácia sa spustí až po prihlásení žiaka (volá ju ziak.js)
 function spustiAplikaciu() {
   vykresliKlavesnicu(klavesnicaEl);
-  ukazObrazovku("pisanie"); // kniznica.js: začíname náhodnými textami
-  dalsiText();              // pribehy.js
+  if (obnovObrazovku()) return; // kniznica.js: po F5 tam, kde žiak bol
+  ukazObrazovku("pisanie");     // inak začíname náhodnými textami
+  dalsiText();                  // pribehy.js
 }
