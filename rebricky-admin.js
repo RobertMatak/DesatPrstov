@@ -80,6 +80,19 @@ function nastavPrepinace() {
   for (const b of document.querySelectorAll("#rezimRebricka button")) b.classList.toggle("aktivny", b.dataset.rezim === rebricek.rezim);
   const test = rebricek.druh === "test";
   const slava = rebricek.rezim === "slava";
+  // Nástenka má vlastný náhľad a tlač (nastenka-admin.js): lekcie aj test naraz
+  const nastenkaRezim = rebricek.rezim === "nastenka";
+  $("nastenkaObal").classList.toggle("skryty", !nastenkaRezim);
+  $("druhRebricka").classList.toggle("skryty", nastenkaRezim);
+  $("tlacitRebricek").classList.toggle("skryty", nastenkaRezim);
+  for (const id of ["lekciaRebrickaObal", "testRebrickaObal", "rozsahRebrickaObal"]) $(id).parentElement.classList.toggle("skryty", nastenkaRezim);
+  if (nastenkaRezim) {
+    $("tabulkaRebricka").classList.add("skryty");
+    $("ziadnyRebricek").classList.add("skryty");
+    $("popisRebricka").textContent = "Všetky rekordy siene slávy pokope, na vytlačenie a vyvesenie. Keď niekto prekoná rekord, " +
+      "vytlačíš len nový riadok (prelepku) a prelepíš ním starý. Rozmery sú v milimetroch, preto pri tlači nastav mierku 100 %.";
+    return;
+  }
   $("lekciaRebrickaObal").classList.toggle("skryty", test);
   $("testRebrickaObal").classList.toggle("skryty", !test || slava); // sieň slávy testu je spoločná pre všetky roky
   $("rozsahRebrickaObal").classList.toggle("skryty", slava);         // v sieni slávy sú triedy z minulých rokov
@@ -103,6 +116,7 @@ async function nacitajRebricek() {
   vyplnRozsah();
   await vyplnTesty();
   nastavPrepinace();
+  if (rebricek.rezim === "nastenka") return nacitajNastenku(); // nastenka-admin.js
   const { druh, rezim } = rebricek;
   let odpoved;
 

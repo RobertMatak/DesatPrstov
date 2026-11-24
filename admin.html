@@ -271,6 +271,7 @@
           <div class="prepinac" id="rezimRebricka">
             <button data-rezim="rok" class="aktivny">Aktuálny rebríček</button>
             <button data-rezim="slava">🏆 Sieň slávy</button>
+            <button data-rezim="nastenka">🖼️ Nástenka</button>
           </div>
         </div>
         <p id="popisRebricka" class="sivy"></p>
@@ -292,6 +293,23 @@
           <tbody id="rebricekRiadky"></tbody>
         </table>
         <p id="ziadnyRebricek" class="sivy skryty"></p>
+
+        <!-- Nástenka siene slávy: náhľad a tlač (riadi nastenka-admin.js) -->
+        <div id="nastenkaObal" class="skryty">
+          <div class="volby-rebricka">
+            <label>Formát
+              <select id="formatNastenky">
+                <option value="A4">A4 na výšku (2 listy)</option>
+                <option value="A3">A3 na šírku (všetko na 1 liste)</option>
+                <option value="A2">A2 na šírku (1 list, všetko 1,4× väčšie)</option>
+              </select>
+            </label>
+            <button id="tlacitNastenku">🖨 Vytlačiť nástenku</button>
+            <button id="tlacitPrelepky" class="druhotne">✂️ Vytlačiť prelepky (0)</button>
+          </div>
+          <p id="stavNastenky" class="sivy"></p>
+          <div id="nahladNastenky" class="nahlad-nastenky"></div>
+        </div>
       </section>
     </main>
 
@@ -395,6 +413,7 @@
   <script src="lekcie-admin.js"></script>   <!-- lekcie v prehľade triedy -->
   <script src="rebricky-admin.js"></script> <!-- rebríčky lekcií a testu, sieň slávy, tlač -->
   <script src="testy-admin.js"></script>    <!-- test rýchlosti v Nastaveniach -->
+  <script src="nastenka-admin.js"></script> <!-- nástenka siene slávy: tlač a prelepky -->
   <script src="texty-admin.js"></script>
   <script src="dlzky-admin.js"></script>
   <script src="knihy-admin.js"></script>

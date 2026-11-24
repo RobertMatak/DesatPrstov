@@ -296,11 +296,17 @@ h4 { margin: 20px 0 6px; }
   body > *:not(.karticky):not(.tlac-rebricka) { display: none !important; }
 
   .tlac-rebricka { display: block !important; font-family: system-ui, sans-serif; }
-  .tlac-rebricka h1 { font-size: 22px; margin: 0 0 4px; }
-  .tlac-rebricka p { font-size: 12px; color: #555; margin: 0 0 14px; }
-  .tlac-rebricka table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .tlac-rebricka th, .tlac-rebricka td { border-bottom: 1px solid #ccc; padding: 5px 8px; text-align: left; color: #000; }
+  /* Rebríček (obyčajná tabuľka); nástenka má vlastné štýly nižšie */
+  .tlac-rebricka > h1 { font-size: 22px; margin: 0 0 4px; }
+  .tlac-rebricka > p { font-size: 12px; color: #555; margin: 0 0 14px; }
+  .tlac-rebricka > table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .tlac-rebricka > table th, .tlac-rebricka > table td { border-bottom: 1px solid #ccc; padding: 5px 8px; text-align: left; color: #000; }
   .tlac-rebricka tr { break-inside: avoid; }
+
+  /* Nástenka: A4 = každý list na vlastnú stranu; A3/A2 = oba listy vedľa seba na jednej strane */
+  .nastenka:not(.vedla) .list + .list { break-before: page; }
+  .nastenka .nb tr.zmena td, .nastenka .nb tr.vybrany td { background: none !important; outline: none !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } /* farby blokov aj pri tlači */
 
   .karticky {
     display: grid;
@@ -653,3 +659,82 @@ select {
 #nazovTestu { width: 120px; }
 #sekcia-nastavenia .karta + .karta { margin-top: 20px; }
 .volby-rebricka .prepinac { margin-bottom: 0; }
+
+/* ===== Nástenka siene slávy (všetky rozmery v mm, --mm = 1mm, pri A2 1,41mm) ===== */
+.nastenka {
+  --mm: 1mm;
+  font-family: system-ui, sans-serif;
+  color: #222;
+  background: white;
+  width: max-content;
+}
+
+.nastenka.vedla { display: flex; gap: calc(16 * var(--mm)); }
+
+.nastenka .list {
+  width: calc(194 * var(--mm));
+  box-sizing: border-box;
+}
+
+.nastenka h1 { font-size: calc(7 * var(--mm)); margin: 0 0 calc(1 * var(--mm)); }
+.nastenka .popis { font-size: calc(2.6 * var(--mm)); color: #666; margin: 0 0 calc(4 * var(--mm)); }
+
+.nastenka .stlpce { display: flex; gap: calc(6 * var(--mm)); align-items: flex-start; }
+.nastenka .stlpec { width: calc(94 * var(--mm)); display: flex; flex-direction: column; gap: calc(5 * var(--mm)); }
+
+/* Tabuľka bloku (aj prelepky): pevné šírky stĺpcov a výška riadku */
+.nastenka .nb {
+  width: calc(94 * var(--mm));
+  table-layout: fixed;
+  border-collapse: collapse;
+  border: calc(0.6 * var(--mm)) solid #222;
+  break-inside: avoid;
+}
+
+.nastenka .nb th, .nastenka .nb td {
+  border: calc(0.25 * var(--mm)) solid #444;
+  padding: 0 calc(1 * var(--mm));
+  text-align: center;
+  color: #222;
+  font-size: calc(2.9 * var(--mm));
+  font-weight: normal;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.nastenka .nb td { height: calc(9.5 * var(--mm)); }
+.nastenka .nb th.roh { background: linear-gradient(to top right, white calc(50% - 0.5px), #222 50%, white calc(50% + 0.5px)); }
+.nastenka .nb tr.h1 th { height: calc(8 * var(--mm)); }
+.nastenka .nb th.nazov { font-size: calc(5 * var(--mm)); font-weight: 800; }
+.nastenka .nb th.rt { font-size: calc(3.4 * var(--mm)); font-weight: 700; }
+.nastenka .nb tr.h2 th { height: calc(4.5 * var(--mm)); font-size: calc(2.2 * var(--mm)); color: #555; font-weight: 600; background: #fafafa; }
+
+/* Šírky stĺpcov (colgroup v nastenka-admin.js), meno dostane zvyšok: 94 − 12 − 15 − 10 − 22 = 35 mm */
+.nastenka .nb col.c-l { width: calc(12 * var(--mm)); }
+.nastenka .nb col.c-rok { width: calc(15 * var(--mm)); }
+.nastenka .nb col.c-trieda { width: calc(10 * var(--mm)); }
+.nastenka .nb col.c-rating { width: calc(22 * var(--mm)); }
+.nastenka .nb td:nth-child(2) { font-size: calc(2.7 * var(--mm)); }
+
+.nastenka .nb td.l b { display: block; font-size: calc(4.3 * var(--mm)); font-weight: 800; line-height: 1.1; }
+.nastenka .nb td small { display: block; font-size: calc(2 * var(--mm)); color: #666; line-height: 1.2; }
+.nastenka .nb td.m { font-weight: 600; white-space: normal; line-height: 1.15; }
+.nastenka .nb td.m.prazdne { color: #aaa; font-weight: normal; font-style: italic; }
+.nastenka .nb td.b b { display: block; font-size: calc(3.9 * var(--mm)); font-weight: 800; line-height: 1.1; }
+.nastenka .nb tr.test td { background: #f2f2f2; border-top: calc(0.6 * var(--mm)) solid #222; }
+
+/* Náhľad na obrazovke: zmenené riadky žlté, vybrané na prelepky orámované */
+.nahlad-nastenky { margin-top: 12px; overflow: hidden; }
+.nahlad-nastenky .nastenka { box-shadow: 0 0 0 1px #ddd; padding: 8mm; }
+.nahlad-nastenky .nastenka.vedla .list + .list { border-left: 1px dashed #ccc; padding-left: 8mm; }
+.nahlad-nastenky .nastenka:not(.vedla) .list + .list { border-top: 1px dashed #ccc; margin-top: 8mm; padding-top: 8mm; }
+.nahlad-nastenky .nb tbody tr { cursor: pointer; }
+.nahlad-nastenky .nb tr.zmena td { background: #fff3b0; }
+.nahlad-nastenky .nb tr.vybrany td { outline: 0.8mm solid #e53935; outline-offset: -0.8mm; }
+
+/* Prelepky: pod sebou s popisom, kam patria */
+.nastenka.prelepky { width: calc(194mm); }
+.nastenka.prelepky .popis { font-size: 3mm; }
+.zoznam-prelepiek { display: flex; flex-wrap: wrap; gap: 5mm 6mm; }
+.prelepka { break-inside: avoid; }
+.prelepka .kam { font-size: 2.6mm; color: #555; margin-bottom: 1mm; }
