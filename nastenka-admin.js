@@ -1,8 +1,9 @@
 // ===== Nástenka siene slávy (učiteľ) – fáza 14 =====
 // Prehľad všetkých rekordov na tlač v štýle učiteľovej excelovej tabuľky:
-//   - 🏆 Najlepší zo školy (všetky lekcie a test rýchlosti)
-//   - Najlepší z 1. stupňa (1.–4. ročník) a z 2. stupňa (5.–9. ročník)
-//   - Najlepší z každého ročníka (jeho lekcie podľa ⚙️ Nastavení a test)
+//   - panel 🏆 Najlepší zo školy (všetky lekcie a test rýchlosti, väčšie tabuľky)
+//   - panel 1. stupeň: ročníky 1–4 a Najlepší z 1. stupňa
+//   - panel 2. stupeň: ročníky 5–9 a Najlepší z 2. stupňa
+//   - (pri A3 a A2) titulný panel s vysvetlivkami
 // Pri každej lekcii je jeden rekordér všetkých čias (zo siene slávy).
 //
 // Tlač je „modulárna“: všetky rozmery sú v milimetroch, takže riadok má
@@ -10,12 +11,16 @@
 // prekoná rekord, vytlačí sa len nový riadok a prelepí sa ním starý.
 // Čo je na nástenke vytlačené, si pamätá databáza (tabuľka nastenka_ucitela).
 
+// Nástenka má 4 panely, každý presne veľký ako A4 na šírku (281 × 194 mm bez okrajov):
+//   škola, 1. stupeň, 2. stupeň a titulný panel. Formát určuje, ako sa panely poskladajú na papier.
+// Riadky sú vo všetkých formátoch rovnako veľké, takže prelepky sedia vždy.
+// page = rozmer papiera (šírka × výška); A2 nemá v CSS vlastný názov, preto všade mm.
 const FORMATY = {
-  // page = rozmer papiera pre tlač (šírka × výška); A2 nemá v CSS vlastný názov, preto všade mm
-  A4: { nazov: "A4 na výšku (2 listy)", page: "210mm 297mm", k: 1, vedla: false },
-  A3: { nazov: "A3 na šírku (všetko na 1 liste)", page: "420mm 297mm", k: 1, vedla: true },
-  A2: { nazov: "A2 na šírku (1 list, všetko 1,4× väčšie)", page: "594mm 420mm", k: Math.SQRT2, vedla: true },
+  A4: { nazov: "A4 na šírku (3 listy)", page: "297mm 210mm", harky: [["skola"], ["st1"], ["st2"]] },
+  A3: { nazov: "A3 na výšku (2 listy)", page: "297mm 420mm", harky: [["st1", "st2"], ["skola", "titul"]] },
+  A2: { nazov: "A2 na šírku (1 plagát)", page: "594mm 420mm", harky: [["titul", "skola", "st1", "st2"]] },
 };
+const ZVACSENIE_SKOLY = 1.5; // tabuľky na paneli Najlepší zo školy sú 1,5× väčšie (aj ich prelepky)
 
 // Farby blokov (ročníky podľa učiteľovej tabuľky)
 const FARBY_NASTENKY = {
@@ -204,44 +209,71 @@ function tabulkaBloku(blok) {
   return tabulka;
 }
 
-// Celá nástenka: list 1 (škola + stupne), list 2 (ročníky)
-function zostavNastenku(format) {
-  const f = FORMATY[format];
-  const obal = bunka("div", `nastenka ${f.vedla ? "vedla" : ""}`);
-  obal.style.setProperty("--mm", `${f.k}mm`);
-  const blok = (id) => nastenka.bloky.find((b) => b.id === id);
-  const datum = new Date().toLocaleDateString("sk-SK");
+// Časť bloku (napr. škola L1–L9 a L10–L18 v dvoch stĺpcoch)
+const castBloku = (blok, od, po) => ({ ...blok, riadky: blok.riadky.slice(od, po) });
 
-  const list1 = bunka("section", "list");
-  list1.append(
-    bunka("h1", "", "Sieň slávy – Desať Prstov"),
-    bunka("p", "popis", `Najlepší výkon všetkých čias · stav k ${datum} · Rating = priemer najlepších bodov z cvičení lekcie, ` +
-      "body = rýchlosť × presnosť³ · SzM = slová za minútu · ⏱️ = test rýchlosti (1 minúta)"),
-  );
-  const stlpce = bunka("div", "stlpce");
-  stlpce.append(bunka("div", "stlpec", tabulkaBloku(blok("skola"))),
-    bunka("div", "stlpec", tabulkaBloku(blok("st1")), tabulkaBloku(blok("st2"))));
-  list1.appendChild(stlpce);
-
-  const list2 = bunka("section", "list");
-  list2.append(bunka("h1", "", "Najlepší z ročníka"),
-    bunka("p", "popis", "Najlepší výkon všetkých čias v každom ročníku (ročník podľa triedy v čase rekordu)"));
-  // Ročníky rozdelíme do dvoch stĺpcov po poradí (napr. 1.–5. vľavo, 6.–9. vpravo)
-  // a hranicu vyberieme tak, aby boli stĺpce čo najrovnakejšie vysoké.
-  const rocniky = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((r) => blok("r" + r));
+// Bloky rozdelené do dvoch stĺpcov po poradí, aby boli stĺpce čo najrovnakejšie vysoké
+function dvaStlpce(bloky) {
   const vyska = (b) => b.riadky.length + 1.9; // v riadkoch: telo + hlavička a medzera
   let najlepsie = 1;
   let najmensia = Infinity;
-  for (let k = 1; k < 9; k++) {
-    const vlavo = rocniky.slice(0, k).reduce((v, b) => v + vyska(b), 0);
-    const vpravo = rocniky.slice(k).reduce((v, b) => v + vyska(b), 0);
-    if (Math.max(vlavo, vpravo) < najmensia) { najmensia = Math.max(vlavo, vpravo); najlepsie = k; }
+  for (let k = 1; k < bloky.length; k++) {
+    const vlavo = bloky.slice(0, k).reduce((v, b) => v + vyska(b), 0);
+    const vpravo = bloky.slice(k).reduce((v, b) => v + vyska(b), 0);
+    // pri rovnakej výške dostane viac ľavý stĺpec (napr. 5.–7. vľavo, 8.–9. vpravo)
+    if (Math.max(vlavo, vpravo) <= najmensia) { najmensia = Math.max(vlavo, vpravo); najlepsie = k; }
   }
-  const s1 = bunka("div", "stlpec", ...rocniky.slice(0, najlepsie).map(tabulkaBloku));
-  const s2 = bunka("div", "stlpec", ...rocniky.slice(najlepsie).map(tabulkaBloku));
-  list2.appendChild(bunka("div", "stlpce", s1, s2));
+  return [bloky.slice(0, najlepsie), bloky.slice(najlepsie)];
+}
 
-  obal.append(list1, list2);
+const VYSVETLIVKY = "Rating = priemer najlepších bodov z cvičení lekcie, body = rýchlosť × presnosť³ · " +
+  "SzM = slová za minútu · ⏱️ = test rýchlosti (1 minúta)";
+
+// Jeden panel (veľkosť A4 na šírku): nadpis, popis a stĺpce s blokmi
+function panelNastenky(id) {
+  const blok = (bid) => nastenka.bloky.find((b) => b.id === bid);
+  const panel = bunka("section", "panel panel-" + id);
+  const stlpce = (zoznam, zvacsenie = 1) => {
+    const el = bunka("div", "stlpce", ...zoznam.map((bloky) => bunka("div", "stlpec", ...bloky.map(tabulkaBloku))));
+    el.style.setProperty("--mm", `${zvacsenie}mm`);
+    return el;
+  };
+
+  if (id === "titul") {
+    panel.append(
+      bunka("div", "pohar", "🏆"),
+      bunka("div", "titul-nazov", "Sieň slávy"),
+      bunka("div", "titul-podnazov", "Desať Prstov · písanie všetkými desiatimi"),
+      bunka("p", "titul-popis", "Najlepší výkon všetkých čias v každej lekcii a v teste rýchlosti: v celej škole, " +
+        "v 1. a 2. stupni a v každom ročníku (ročník podľa triedy v čase rekordu)."),
+      bunka("p", "titul-popis", VYSVETLIVKY),
+      bunka("p", "titul-datum", "Stav k " + new Date().toLocaleDateString("sk-SK")),
+    );
+    return panel;
+  }
+  if (id === "skola") {
+    const skola = blok("skola");
+    const pol = Math.ceil((skola.riadky.length - 1) / 2); // test ide do druhého stĺpca
+    panel.append(bunka("h1", "", "🏆 Sieň slávy – Najlepší zo školy"),
+      bunka("p", "popis", "Najlepší výkon všetkých čias v celej škole · " + VYSVETLIVKY),
+      stlpce([[castBloku(skola, 0, pol)], [castBloku(skola, pol, skola.riadky.length)]], ZVACSENIE_SKOLY));
+    return panel;
+  }
+  // 1. stupeň (ročníky 1–4) alebo 2. stupeň (ročníky 5–9): ročníky v dvoch stĺpcoch, vpravo blok stupňa
+  const rocniky = id === "st1" ? [1, 2, 3, 4] : [5, 6, 7, 8, 9];
+  const [vlavo, vpravo] = dvaStlpce(rocniky.map((r) => blok("r" + r)));
+  panel.append(bunka("h1", "", `Sieň slávy – ${id === "st1" ? "1" : "2"}. stupeň`),
+    bunka("p", "popis", "Najlepší výkon všetkých čias (ročník podľa triedy v čase rekordu) · " + VYSVETLIVKY),
+    stlpce([vlavo, vpravo, [blok(id)]]));
+  return panel;
+}
+
+// Celá nástenka vo zvolenom formáte: hárky papiera, na každom panely
+function zostavNastenku(format) {
+  const obal = bunka("div", `nastenka format-${format}`);
+  for (const panely of FORMATY[format].harky) {
+    obal.appendChild(bunka("div", "harok", ...panely.map(panelNastenky)));
+  }
   return obal;
 }
 
@@ -335,7 +367,7 @@ const PRIPOMIENKA_MIERKY = "V okne tlače nastav MIERKU 100 % (nie „Prispôsob
 $("tlacitNastenku").addEventListener("click", async () => {
   const format = $("formatNastenky").value;
   if (!confirm(`Tlač nástenky: ${FORMATY[format].nazov}.\n\n${PRIPOMIENKA_MIERKY}` +
-      (format === "A2" ? "\n\nA2: v okne tlače zvoľ „Uložiť ako PDF“ a PDF zanes do kopírovacieho centra." : ""))) return;
+      (format !== "A4" ? `\n\n${format}: ak tlačiareň tento formát nemá, zvoľ v okne tlače „Uložiť ako PDF“ a PDF zanes do kopírovacieho centra.` : ""))) return;
   const tlac = $("tlacRebricka");
   $("karticky").innerHTML = "";
   tlac.innerHTML = "";
@@ -354,12 +386,11 @@ $("tlacitPrelepky").addEventListener("click", async () => {
   const format = $("formatNastenky").value;
   const kluce = new Set(nastenka.vybrane);
   if (kluce.size === 0) return;
-  if (!confirm(`Prelepky (${kluce.size}) vo veľkosti pre nástenku ${format}, vytlačia sa na A4.\n\n${PRIPOMIENKA_MIERKY}`)) return;
+  if (!confirm(`Prelepky (${kluce.size}) sa vytlačia na A4 v presnej veľkosti riadkov nástenky.\n\n${PRIPOMIENKA_MIERKY}`)) return;
 
   const obal = bunka("div", "nastenka prelepky");
-  obal.style.setProperty("--mm", `${FORMATY[format].k}mm`);
   obal.appendChild(bunka("p", "popis",
-    `Prelepky na nástenku siene slávy (${format}) · vystrihni po vonkajšom okraji riadku a nalep na riadok podľa popisu nad ním.`));
+    "Prelepky na nástenku siene slávy · vystrihni po vonkajšom okraji riadku a nalep na riadok podľa popisu nad ním."));
   const zoznam = bunka("div", "zoznam-prelepiek");
   for (const blok of nastenka.bloky) {
     for (const riadok of blok.riadky) {
@@ -367,7 +398,10 @@ $("tlacitPrelepky").addEventListener("click", async () => {
       const kam = `${blok.nazov.replace("🏆 ", "")} · ${riadok.lekcia ? "L" + riadok.lekcia + " " + LEKCIE[riadok.lekcia - 1].nazov : "Test rýchlosti"}`;
       const tabulka = bunka("table", "nb");
       tabulka.append(stlpceTabulky(), bunka("tbody", "", riadokNastenky(riadok)));
-      zoznam.appendChild(bunka("div", "prelepka", bunka("div", "kam", "Nalepiť: " + kam), tabulka));
+      const prelepka = bunka("div", "prelepka", bunka("div", "kam", "Nalepiť: " + kam), tabulka);
+      // riadky zo školského panela sú väčšie, rovnako aj ich prelepky
+      prelepka.style.setProperty("--mm", `${blok.id === "skola" ? ZVACSENIE_SKOLY : 1}mm`);
+      zoznam.appendChild(prelepka);
     }
   }
   obal.appendChild(zoznam);
